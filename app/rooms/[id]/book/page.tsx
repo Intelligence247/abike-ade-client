@@ -1,34 +1,57 @@
-import React from 'react';
+"use client"
+
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { BookingForm } from '@/components/ui/booking-form';
-import { rooms } from '@/lib/mock-data';
+import { useRoom } from '@/hooks/use-rooms';
 import { 
   ArrowLeft, 
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 
-// Generate static params for all room IDs
-export async function generateStaticParams() {
-  return rooms.map((room) => ({
-    id: room.id,
-  }));
-}
+export default function BookRoomPage({ params }: { params: Promise<{ id: string }> }) {
+  const [roomId, setRoomId] = useState<string | null>(null);
+  const { room, loading, error } = useRoom(roomId || '');
 
-export default async function BookRoomPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: roomId } = await params;
-  const room = rooms.find(r => r.id === roomId);
+  useEffect(() => {
+    const getRoomId = async () => {
+      try {
+        const resolvedParams = await params;
+        if (resolvedParams?.id) {
+          setRoomId(resolvedParams.id);
+        }
+      } catch (error) {
+        console.error('Error resolving params:', error);
+      }
+    };
 
-  if (!room) {
+    getRoomId();
+  }, [params]);
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-indigo-600" />
+          <p className="text-gray-600 dark:text-gray-400">Loading room details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !room) {
+    return (
+      <div className="min-h-screen bg-neutral-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Room Not Found
+            {error ? 'Error Loading Room' : 'Room Not Found'}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            The room you're trying to book doesn't exist.
+            {error || "The room you're trying to book doesn't exist."}
           </p>
           <Link href="/rooms">
             <Button>
@@ -41,7 +64,7 @@ export default async function BookRoomPage({ params }: { params: Promise<{ id: s
     );
   }
 
-  if (room.status !== 'available') {
+  if (!room.available) {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
@@ -50,7 +73,7 @@ export default async function BookRoomPage({ params }: { params: Promise<{ id: s
             Room Not Available
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            This room is currently booked. Please check back later or browse other available rooms.
+            This room is currently occupied. Please check back later or browse other available rooms.
           </p>
           <Link href="/rooms">
             <Button>

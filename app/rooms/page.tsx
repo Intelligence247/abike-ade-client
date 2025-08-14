@@ -1,15 +1,32 @@
+"use client"
+
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { RoomListing } from '@/components/ui/room-listing';
+import { RoomFilters } from '@/components/ui/room-filters';
+import { RoomCard } from '@/components/ui/room-card';
+import { useRooms } from '@/hooks/use-rooms';
 import { 
   ArrowLeft,
   Home,
-  Building
+  Building,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 
 export default function RoomsPage() {
+  const { 
+    rooms, 
+    loading, 
+    error, 
+    filters, 
+    pagination,
+    updateFilters, 
+    resetFilters 
+  } = useRooms();
+
+  console.log(rooms+" "+"rooms alert")
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-gray-900">
       {/* Header */}
@@ -81,7 +98,85 @@ export default function RoomsPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <RoomListing />
+        <div className="grid lg:grid-cols-4 gap-8">
+          {/* Filters Sidebar */}
+          <div className="lg:col-span-1">
+            <RoomFilters 
+              filters={filters}
+              onUpdateFilters={updateFilters}
+              onResetFilters={resetFilters}
+            />
+          </div>
+
+          {/* Rooms Grid */}
+          <div className="lg:col-span-3">
+            {/* Results Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Available Rooms
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400">
+                  {loading ? 'Loading...' : `${pagination.totalItems} rooms found`}
+                </p>
+              </div>
+              {pagination.totalPages > 1 && (
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Page {pagination.currentPage} of {pagination.totalPages}
+                </div>
+              )}
+            </div>
+
+            {/* Loading State */}
+            {loading && (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-indigo-600" />
+                  <p className="text-gray-600 dark:text-gray-400">Loading rooms...</p>
+                </div>
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && (
+              <div className="text-center py-12">
+                <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  Unable to load rooms
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+                <Button onClick={() => window.location.reload()}>
+                  Try Again
+                </Button>
+              </div>
+            )}
+
+            {/* Rooms Grid */}
+            {!loading && !error && rooms.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {rooms.map((room) => (
+                  <RoomCard key={room.id} room={room} />
+                ))}
+              </div>
+            )}
+
+            {/* No Results */}
+            {!loading && !error && rooms.length === 0 && (
+              <div className="text-center py-12">
+                <Building className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  No rooms found
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  Try adjusting your filters or check back later for new listings.
+                </p>
+                <Button variant="outline" onClick={resetFilters}>
+                  Clear All Filters
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
       </main>
 
       {/* Footer CTA */}

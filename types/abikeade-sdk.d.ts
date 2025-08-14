@@ -64,5 +64,70 @@ declare module 'abikeade-sdk' {
         onError: (error: any) => void;
       }): Promise<any>;
     };
+    site: {
+      featuredImages(options: {
+        params?: { per_page?: number; page?: number };
+        onSuccess: (data: any) => void;
+        onError: (error: any) => void;
+      }): Promise<any>;
+      roomList(options: {
+        params?: { 
+          per_page?: number; 
+          page?: number;
+          search?: string;
+          min_price?: number;
+          max_price?: number;
+          room_type?: string;
+          availability?: string;
+          amenities?: string[];
+          id?: number;
+        };
+        onSuccess: (data: any) => void;
+        onError: (error: any) => void;
+      }): Promise<any>;
+      sendMessage(options: {
+        formData: {
+          email: string;
+          name: string;
+          subject: string;
+          message: string;
+        };
+        onSuccess: (data: any) => void;
+        onError: (error: any) => void;
+      }): Promise<any>;
+    };
+    room: {
+      book(options: {
+        formData: { room_id: number };
+        onSuccess: (data: any) => void;
+        onError: (error: any) => void;
+      }): Promise<any>;
+      makePayment(options: {
+        formData: {
+          paystack_public_key: string;
+          email: string;
+          amount: number;
+          reference: string;
+        };
+        onSuccess: (data: any) => void;
+        onError: (error: any) => void;
+      }): Promise<any>;
+      verifyPayment(options: {
+        params: { reference: string };
+        onSuccess: (data: any) => void;
+        onError: (error: any) => void;
+      }): Promise<any>;
+    };
+    rent: {
+      history(options: {
+        params?: { reference?: string; status?: string };
+        onSuccess: (data: any) => void;
+        onError: (error: any) => void;
+      }): Promise<any>;
+      generateAgreement(options: {
+        onSuccess: (data: any) => void;
+        onError: (error: any) => void;
+      }): Promise<any>;
+    };
   }
 }

@@ -1,165 +1,179 @@
 "use client"
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Search, Filter, X } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Search, 
+  Filter, 
+  X, 
+  RotateCcw,
+  Minus,
+  Plus
+} from 'lucide-react';
 
 interface RoomFiltersProps {
-  roomTypes: string[];
-  priceRanges: string[];
-  amenities: string[];
-  onFiltersChange: (filters: any) => void;
+  filters: {
+    search?: string;
+    sort_by?: string;
+    per_page?: number;
+    page?: number;
+  };
+  onUpdateFilters: (filters: any) => void;
+  onResetFilters: () => void;
+  className?: string;
 }
 
-export function RoomFilters({ roomTypes, priceRanges, amenities, onFiltersChange }: RoomFiltersProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedType, setSelectedType] = useState('');
-  const [selectedPriceRange, setSelectedPriceRange] = useState('');
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
+const sortOptions = [
+  { value: 'title', label: 'Name (A-Z)' },
+  { value: '-title', label: 'Name (Z-A)' },
+  { value: 'price', label: 'Price (Low to High)' },
+  { value: '-price', label: 'Price (High to Low)' }
+];
 
-  const handleAmenityChange = (amenity: string, checked: boolean) => {
-    if (checked) {
-      setSelectedAmenities([...selectedAmenities, amenity]);
-    } else {
-      setSelectedAmenities(selectedAmenities.filter(a => a !== amenity));
-    }
+const perPageOptions = [
+  { value: 10, label: '10 per page' },
+  { value: 20, label: '20 per page' },
+  { value: 50, label: '50 per page' }
+];
+
+export function RoomFilters({ 
+  filters, 
+  onUpdateFilters, 
+  onResetFilters, 
+  className = "" 
+}: RoomFiltersProps) {
+  const [localFilters, setLocalFilters] = useState(filters);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const handleFilterChange = (key: string, value: any) => {
+    // Convert "all" values to undefined for the API
+    let processedValue = value === 'all' ? undefined : value;
+    
+    const newFilters = { ...localFilters, [key]: processedValue };
+    setLocalFilters(newFilters);
   };
 
-  const clearFilters = () => {
-    setSearchTerm('');
-    setSelectedType('');
-    setSelectedPriceRange('');
-    setSelectedAmenities([]);
+  const handleApplyFilters = () => {
+    onUpdateFilters(localFilters);
   };
 
-  // Memoize the filter change handler to prevent infinite loops
-  const handleFiltersChange = useCallback(() => {
-    onFiltersChange({
-      searchTerm,
-      selectedType,
-      selectedPriceRange,
-      selectedAmenities
-    });
-  }, [searchTerm, selectedType, selectedPriceRange, selectedAmenities, onFiltersChange]);
+  const handleResetFilters = () => {
+    setLocalFilters({});
+    onResetFilters();
+  };
 
-  // Update parent component whenever filters change
-  React.useEffect(() => {
-    handleFiltersChange();
-  }, [handleFiltersChange]);
-
-  const hasActiveFilters = searchTerm || selectedType || selectedPriceRange || selectedAmenities.length > 0;
+  const hasActiveFilters = Object.values(localFilters).some(value => 
+    value !== undefined && value !== '' && 
+    (typeof value === 'boolean' ? true : (Array.isArray(value) ? value.length > 0 : true))
+  );
 
   return (
-    <div className="space-y-4">
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-        <Input
-          placeholder="Search rooms, locations, or features..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 pr-4"
-        />
-      </div>
-
-      {/* Filter Toggle */}
-      <div className="flex items-center justify-between">
-        <Button
-          variant="outline"
-          onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center space-x-2"
-        >
-          <Filter className="h-4 w-4" />
-          <span>Filters</span>
-          {hasActiveFilters && (
-            <div className="w-2 h-2 bg-indigo-600 rounded-full" />
-          )}
-        </Button>
-        
-        {hasActiveFilters && (
+    <Card className={`${className}`}>
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center space-x-2">
+            <Filter className="h-5 w-5" />
+            <span>Filters</span>
+            {hasActiveFilters && (
+              <Badge variant="secondary" className="ml-2">
+                Active
+              </Badge>
+            )}
+          </CardTitle>
           <Button
             variant="ghost"
-            onClick={clearFilters}
-            className="text-gray-500 hover:text-gray-700"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
           >
-            <X className="h-4 w-4 mr-1" />
-            Clear
+            {isExpanded ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
           </Button>
-        )}
-      </div>
+        </div>
+      </CardHeader>
 
-      {/* Filter Panel */}
-      {showFilters && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-4">
-          {/* Room Type */}
-          <div>
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-              Room Type
-            </label>
-            <Select value={selectedType} onValueChange={setSelectedType}>
-              <SelectTrigger>
-                <SelectValue placeholder="All room types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All room types</SelectItem>
-                {roomTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Price Range */}
-          <div>
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-              Price Range
-            </label>
-            <Select value={selectedPriceRange} onValueChange={setSelectedPriceRange}>
-              <SelectTrigger>
-                <SelectValue placeholder="All prices" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All prices</SelectItem>
-                {priceRanges.map((range) => (
-                  <SelectItem key={range} value={range}>
-                    {range}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Amenities */}
-          <div>
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-              Amenities
-            </label>
-            <div className="space-y-2">
-              {amenities.map((amenity) => (
-                <div key={amenity} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={amenity}
-                    checked={selectedAmenities.includes(amenity)}
-                    onCheckedChange={(checked) => handleAmenityChange(amenity, checked as boolean)}
-                  />
-                  <label
-                    htmlFor={amenity}
-                    className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
-                  >
-                    {amenity}
-                  </label>
-                </div>
-              ))}
-            </div>
+      <CardContent className="space-y-6">
+        {/* Search */}
+        <div className="space-y-2">
+          <Label htmlFor="search">Search Rooms</Label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              id="search"
+              placeholder="Search by room name..."
+              value={localFilters.search || ''}
+              onChange={(e) => {
+                handleFilterChange('search', e.target.value);
+                // Apply search immediately
+                onUpdateFilters({ ...localFilters, search: e.target.value, page: 1 });
+              }}
+              className="pl-10"
+            />
           </div>
         </div>
-      )}
-    </div>
+
+        {/* Sort By */}
+        <div className="space-y-2">
+          <Label htmlFor="sort">Sort By</Label>
+          <Select
+            value={localFilters.sort_by || 'title'}
+            onValueChange={(value) => handleFilterChange('sort_by', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select sorting" />
+            </SelectTrigger>
+            <SelectContent>
+              {sortOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Items Per Page */}
+        <div className="space-y-2">
+          <Label htmlFor="per_page">Items Per Page</Label>
+          <Select
+            value={String(localFilters.per_page || 20)}
+            onValueChange={(value) => handleFilterChange('per_page', Number(value))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select items per page" />
+            </SelectTrigger>
+            <SelectContent>
+              {perPageOptions.map((option) => (
+                <SelectItem key={option.value} value={String(option.value)}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex space-x-3 pt-4">
+          <Button 
+            onClick={handleApplyFilters} 
+            className="flex-1"
+            disabled={!hasActiveFilters}
+          >
+            Apply Filters
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={handleResetFilters}
+            disabled={!hasActiveFilters}
+          >
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Reset
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 } 

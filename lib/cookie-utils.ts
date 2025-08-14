@@ -1,45 +1,46 @@
-// Utility functions to check and debug cookies
+// Utility functions to check cookies
 
-export function checkCookies() {
-  const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+// Check if we're on the client side
+const isClient = typeof window !== 'undefined';
+
+export function hasAuthCookies(): boolean {
+  if (!isClient) return false;
+  
+  const allCookies = document.cookie.split(';').reduce((acc, cookie) => {
     const [key, value] = cookie.trim().split('=');
-    acc[key] = value;
+    if (key && value) {
+      acc[key] = value;
+    }
     return acc;
   }, {} as Record<string, string>);
   
-  console.log('All current cookies:', cookies);
+  console.log('🍪 All cookies found:', allCookies);
   
-  const authCookies = {
-    auth_token: cookies.auth_token,
-    csrftoken: cookies.csrftoken,
-    sessionid: cookies.sessionid
-  };
+  // Check specifically for auth_token (the main cookie we care about)
+  const hasAuthToken = !allCookies.auth_token;
   
-  console.log('Expected auth cookies:', authCookies);
-  
-  // Check for any cookies that might be auth-related
-  const possibleAuthCookies = Object.keys(cookies).filter(key => 
+  // Also check if we have any other auth-related cookies
+  const hasAnyAuthCookie = Object.keys(allCookies).some(key => 
     key.toLowerCase().includes('auth') || 
     key.toLowerCase().includes('token') || 
     key.toLowerCase().includes('session') ||
     key.toLowerCase().includes('csrf')
   );
   
-  console.log('Possible auth-related cookies:', possibleAuthCookies);
+  console.log('🔑 hasAuthToken:', hasAuthToken, 'hasAnyAuthCookie:', hasAnyAuthCookie);
   
-  return authCookies;
-}
-
-export function hasAuthCookies(): boolean {
-  const cookies = checkCookies();
-  return !!(cookies.auth_token && cookies.csrftoken && cookies.sessionid);
+  return hasAuthToken || hasAnyAuthCookie;
 }
 
 // Check if any auth-related cookies exist
 export function hasAnyAuthCookies(): boolean {
+  if (!isClient) return false;
+  
   const allCookies = document.cookie.split(';').reduce((acc, cookie) => {
     const [key, value] = cookie.trim().split('=');
-    acc[key] = value;
+    if (key && value) {
+      acc[key] = value;
+    }
     return acc;
   }, {} as Record<string, string>);
   
@@ -50,6 +51,5 @@ export function hasAnyAuthCookies(): boolean {
     key.toLowerCase().includes('csrf')
   );
   
-  console.log('Found auth-related cookies:', authRelatedCookies);
   return authRelatedCookies.length > 0;
 }

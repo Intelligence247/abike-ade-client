@@ -3,17 +3,18 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/auth-context';
 import { 
   Home, 
+  Building, 
   User, 
   CreditCard, 
   FileText, 
-  LogOut,
-  Menu,
+  Menu, 
   X,
-  Building
+  LogOut
 } from 'lucide-react';
 
 interface NavigationProps {
@@ -51,6 +52,7 @@ const navigationItems = [
 export function Navigation({ className }: NavigationProps) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const { logout } = useAuth();
 
   return (
     <>
@@ -114,14 +116,14 @@ export function Navigation({ className }: NavigationProps) {
 
           {/* Logout */}
           <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-            <Link
-              href="/signin"
+            <Button
+              variant="ghost"
               className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full"
-              onClick={() => setIsMobileMenuOpen(false)}
+              onClick={logout}
             >
               <LogOut size={18} />
               <span>Sign Out</span>
-            </Link>
+            </Button>
           </div>
         </div>
       </nav>

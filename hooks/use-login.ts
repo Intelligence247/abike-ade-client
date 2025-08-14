@@ -2,8 +2,19 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { apiClient, LoginData, ApiResponse } from '@/lib/api-client';
-import { checkCookies, hasAuthCookies, hasAnyAuthCookies } from '@/lib/cookie-utils';
+import { hasAuthCookies } from '@/lib/cookie-utils';
+
+interface LoginData {
+  username: string;
+  password: string;
+}
+
+interface ApiResponse {
+  message: string;
+  status: 'success' | 'error';
+  data?: any;
+  authenticated?: boolean;
+}
 
 interface UseLoginReturn {
   login: (data: LoginData) => Promise<boolean>;
@@ -21,38 +32,38 @@ export function useLogin(): UseLoginReturn {
       setLoading(true);
       setError(null);
       
+      console.log('🚀 Starting login process...');
+      
+      // Dynamically import the API client to avoid SSR issues
+      const { apiClient } = await import('@/lib/api-client');
       const response: ApiResponse = await apiClient.login(data);
       
+      console.log('📨 Login response received:', response);
+      
       if (response.status === 'success') {
+        console.log('✅ Login successful, checking cookies...');
+        
+        // Check cookies after successful login
+        const { hasAuthCookies } = await import('@/lib/cookie-utils');
+        const hasCookies = hasAuthCookies();
+        console.log('🍪 Has auth cookies after login:', hasCookies);
+        
         toast.success(response.message || 'Login successful!');
         
-        // Check if cookies were set after login
-        console.log('Checking cookies after login...');
-        setTimeout(() => {
-          const hasAnyCookies = hasAnyAuthCookies();
-          const hasSpecificCookies = hasAuthCookies();
-          console.log('Has any auth-related cookies after login:', hasAnyCookies);
-          console.log('Has specific auth cookies after login:', hasSpecificCookies);
-          
-          if (hasAnyCookies || hasSpecificCookies) {
-            console.log('Cookies found, redirecting to dashboard...');
-            window.location.href = '/dashboard';
-          } else {
-            console.log('No auth cookies found after login - this might indicate a backend issue');
-            // Still redirect but log the issue
-            window.location.href = '/dashboard';
-          }
-        }, 1000);
-        
+        // Simple redirect to dashboard after successful login
+        console.log('🔄 Redirecting to dashboard...');
+        window.location.href = '/dashboard';
         return true;
       } else {
         const errorMessage = response.message || 'Login failed';
+        console.log('❌ Login failed:', errorMessage);
         setError(errorMessage);
         toast.error(errorMessage);
         return false;
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Login failed';
+      console.log('💥 Login error:', errorMessage);
       setError(errorMessage);
       toast.error(errorMessage);
       return false;

@@ -1,55 +1,93 @@
-import React from 'react';
+"use client"
+
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { ImageGallery } from '@/components/ui/image-gallery';
-import { rooms } from '@/lib/mock-data';
+import { constructImageUrl } from '@/lib/utils';
+import { useRoom } from '@/hooks/use-rooms';
+import { useAuth } from '@/lib/auth-context';
+import { BookingModal } from '@/components/ui/booking-modal';
 import { 
   ArrowLeft, 
   MapPin, 
   Users, 
-  Square, 
-  Wifi, 
-  Snowflake, 
-  Car,
-  Home,
-  ArrowRight,
-  Star,
-  Check,
   Calendar,
+  ArrowRight,
   Clock,
   Shield,
-  Utensils,
+  Wifi,
   Lightbulb,
   Phone,
-  Mail
+  Mail,
+  Loader2,
+  AlertCircle,
+  ImageIcon,
+  User,
+  Lock
 } from 'lucide-react';
 
-// Generate static params for all room IDs
-export async function generateStaticParams() {
-  return rooms.map((room) => ({
-    id: room.id,
-  }));
-}
+export default function RoomDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const [roomId, setRoomId] = useState<string | null>(null);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const { room, loading, error } = useRoom(roomId || '');
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
 
-export default async function RoomDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: roomId } = await params;
+  useEffect(() => {
+    const getRoomId = async () => {
+      try {
+        const resolvedParams = await params;
+        console.log('Room Details: Resolved params:', resolvedParams);
+        if (resolvedParams?.id) {
+          console.log('Room Details: Setting room ID to:', resolvedParams.id);
+          setRoomId(resolvedParams.id);
+        } else {
+          console.error('Room Details: No room ID found in params');
+        }
+      } catch (error) {
+        console.error('Room Details: Error resolving params:', error);
+        // Set a fallback or show error state
+      }
+    };
 
-  const room = rooms.find(r => r.id === roomId);
+    getRoomId();
+  }, [params]);
 
-  if (!room) {
+  // Debug logging for room ID changes
+  useEffect(() => {
+    console.log('Room Details: Room ID changed to:', roomId);
+  }, [roomId]);
+
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-indigo-600" />
+          <p className="text-gray-600 dark:text-gray-400">Loading room details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !room) {
+    return (
+      <div className="min-h-screen bg-neutral-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Room Not Found
+            {error ? 'Error Loading Room' : 'Room Not Found'}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            The room you're looking for doesn't exist or has been removed.
+            {error || "The room you're looking for doesn't exist or has been removed."}
           </p>
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+              <p className="text-sm text-red-600 dark:text-red-400">Error details: {error}</p>
+            </div>
+          )}
           <Link href="/rooms">
             <Button>
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -61,7 +99,35 @@ export default async function RoomDetailsPage({ params }: { params: Promise<{ id
     );
   }
 
-  const isAvailable = room.status === 'available';
+  // Debug logging
+  // console.log('Rendering room:', room);
+  // console.log('Room price:', room.price, 'Type:', typeof room.price);
+  // console.log('Room images:', room.images);
+
+  const formatPrice = (price: string) => {
+    try {
+      const numericPrice = parseFloat(price);
+      if (isNaN(numericPrice)) {
+        return 'Price not available';
+      }
+      return new Intl.NumberFormat('en-NG', {
+        style: 'currency',
+        currency: 'NGN',
+        minimumFractionDigits: 0,
+      }).format(numericPrice);
+    } catch (error) {
+      return 'Price not available';
+    }
+  };
+
+  const handleBookNow = () => {
+    if (!isAuthenticated) {
+      // Show account required message
+      alert('You need to have an account to book a room. Please sign in or create an account first.');
+      return;
+    }
+    setShowBookingModal(true);
+  };
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-gray-900">
@@ -74,7 +140,7 @@ export default async function RoomDetailsPage({ params }: { params: Promise<{ id
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Rooms
               </Link>
-              <Separator orientation="vertical" className="h-6" />
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600" />
               <Link href="/" className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-sm">AC</span>
@@ -87,203 +153,204 @@ export default async function RoomDetailsPage({ params }: { params: Promise<{ id
             
             <div className="flex items-center space-x-4">
               <ThemeToggle />
-              <Link href="/signin">
-                <Button variant="outline" size="sm">
-                  Sign In
-                </Button>
-              </Link>
-              <Link href="/register">
-                <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">
-                  Get Started
-                </Button>
-              </Link>
+              {!isAuthenticated ? (
+                <>
+                  <Link href="/signin">
+                    <Button variant="outline" size="sm">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link href="/register">
+                    <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">
+                      Get Started
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <Link href="/dashboard">
+                  <Button size="sm" variant="outline">
+                    Dashboard
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>
       </header>
 
+      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-                         {/* Image Gallery */}
-             <ImageGallery images={room.images} title={room.title} />
+          <div className="lg:col-span-2 space-y-6">
+            {/* Room Images */}
+            <Card className="border-gray-200 dark:border-gray-800">
+              <CardContent className="p-0">
+                {room.images && room.images.length > 0 ? (
+                  <div className="relative">
+                    <img
+                      src={constructImageUrl(process.env.NEXT_PUBLIC_BASE_URL, room.images[0].image)}
+                      alt={room.images[0].description || room.title}
+                      className="w-full h-96 object-cover rounded-t-lg"
+                    />
+                    <div className="absolute top-4 left-4">
+                      <Badge 
+                        variant={room.available ? "default" : "secondary"}
+                        className={room.available 
+                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                          : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                        }
+                      >
+                        {room.available ? 'Available' : 'Occupied'}
+                      </Badge>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full h-96 bg-gray-200 dark:bg-gray-700 rounded-t-lg flex items-center justify-center">
+                    <div className="text-center">
+                      <ImageIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500">No images available</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-            {/* Room Information */}
+            {/* Room Details */}
             <Card className="border-gray-200 dark:border-gray-800">
               <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-2xl text-gray-900 dark:text-white">
-                      {room.title}
-                    </CardTitle>
-                    <CardDescription className="text-gray-600 dark:text-gray-400">
-                      {room.block} • {room.floor} • Room {room.roomNumber}
-                    </CardDescription>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                      ₦{room.price.toLocaleString()}
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      per {room.pricePer}
-                    </div>
-                  </div>
-                </div>
+                <CardTitle className="text-gray-900 dark:text-white">{room.title}</CardTitle>
+                <CardDescription className="text-gray-600 dark:text-gray-400">
+                  Room ID: {room.id}
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                  {room.description}
-                </p>
-
-                {/* Room Features */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                    <Users className="h-4 w-4" />
-                    <span>{room.capacity} person</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                    <Square className="h-4 w-4" />
-                    <span>{room.size}</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                    <Home className="h-4 w-4" />
-                    <span>{room.features.bedType}</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                    <MapPin className="h-4 w-4" />
-                    <span>{room.features.bathroom}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Amenities */}
-            <Card className="border-gray-200 dark:border-gray-800">
-              <CardHeader>
-                <CardTitle className="text-gray-900 dark:text-white">Amenities & Features</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {room.amenities.map((amenity, index) => (
-                    <div key={index} className="flex items-center space-x-3">
-                      <Check className="h-4 w-4 text-green-600" />
-                      <span className="text-gray-700 dark:text-gray-300">{amenity}</span>
+                {/* Features */}
+                {room.features && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Features</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {room.features.split(',').map((feature, index) => (
+                        <Badge key={index} variant="secondary" className="px-3 py-1">
+                          {feature.trim()}
+                        </Badge>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* House Rules */}
-            <Card className="border-gray-200 dark:border-gray-800">
-              <CardHeader>
-                <CardTitle className="text-gray-900 dark:text-white">House Rules</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {room.rules.map((rule, index) => (
-                    <div key={index} className="flex items-start space-x-3">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full mt-2 flex-shrink-0" />
-                      <span className="text-gray-700 dark:text-gray-300">{rule}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Availability */}
-            <Card className="border-gray-200 dark:border-gray-800">
-              <CardHeader>
-                <CardTitle className="text-gray-900 dark:text-white">Availability</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-700 dark:text-gray-300">Status</span>
-                    <Badge 
-                      variant={isAvailable ? "default" : "secondary"}
-                      className={isAvailable 
-                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                        : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-                      }
-                    >
-                      {isAvailable ? 'Available' : 'Booked'}
-                    </Badge>
                   </div>
-                  {isAvailable ? (
-                    <>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-700 dark:text-gray-300">Move-in Date</span>
-                        <span className="text-gray-900 dark:text-white font-medium">
-                          {room.availability.immediate ? 'Immediate' : room.availability.nextAvailable}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-700 dark:text-gray-300">Minimum Stay</span>
-                        <span className="text-gray-900 dark:text-white font-medium">
-                          {room.availability.minimumStay}
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-700 dark:text-gray-300">Next Available</span>
-                      <span className="text-gray-900 dark:text-white font-medium">
-                        {room.availability.nextAvailable}
-                      </span>
+                )}
+
+                {/* Description */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Description</h3>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    This comfortable student accommodation offers all the amenities you need for a successful academic year. 
+                    Located in a prime area with easy access to universities and essential services.
+                  </p>
+                </div>
+
+                {/* Amenities */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Amenities</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-3">
+                      <Wifi className="h-5 w-5 text-green-600" />
+                      <span className="text-gray-700 dark:text-gray-300">High-Speed WiFi</span>
                     </div>
-                  )}
+                    <div className="flex items-center space-x-3">
+                      <Lightbulb className="h-5 w-5 text-green-600" />
+                      <span className="text-gray-700 dark:text-gray-300">24/7 Power Supply</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <Shield className="h-5 w-5 text-green-600" />
+                      <span className="text-gray-700 dark:text-gray-300">24/7 Security</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <MapPin className="h-5 w-5 text-green-600" />
+                      <span className="text-gray-700 dark:text-gray-300">Prime Location</span>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="lg:col-span-1 space-y-6">
             {/* Booking Card */}
             <Card className="border-gray-200 dark:border-gray-800 sticky top-24">
               <CardHeader>
                 <CardTitle className="text-gray-900 dark:text-white">Book This Room</CardTitle>
-                <CardDescription>
-                  Secure your accommodation today
-                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
+                {/* Pricing */}
                 <div className="text-center">
                   <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                    ₦{room.price.toLocaleString()}
+                    {formatPrice(room.price)}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    per {room.pricePer}
+                    per year (12 months)
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                    All utilities included
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Room Type</span>
-                    <span className="text-gray-900 dark:text-white">{room.type}</span>
+                    <span className="text-gray-600 dark:text-gray-400">Status</span>
+                    <Badge 
+                      variant={room.available ? "default" : "secondary"}
+                      className={room.available 
+                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                        : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                      }
+                    >
+                      {room.available ? 'Available' : 'Occupied'}
+                    </Badge>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Capacity</span>
-                    <span className="text-gray-900 dark:text-white">{room.capacity} person</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Size</span>
-                    <span className="text-gray-900 dark:text-white">{room.size}</span>
+                    <span className="text-gray-600 dark:text-gray-400">Images</span>
+                    <span className="text-gray-900 dark:text-white">{room.images?.length || 0} available</span>
                   </div>
                 </div>
 
                 <Separator />
 
-                {isAvailable ? (
+                {room.available ? (
                   <div className="space-y-3">
-                    <Link href={`/rooms/${room.id}/book`} className="w-full">
-                      <Button className="w-full bg-indigo-600 hover:bg-indigo-700">
+                    {isAuthenticated ? (
+                      <Button 
+                        onClick={handleBookNow}
+                        className="w-full bg-indigo-600 hover:bg-indigo-700"
+                      >
                         Book Now
                         <ArrowRight className="h-4 w-4 ml-2" />
                       </Button>
-                    </Link>
+                    ) : (
+                      <div className="text-center p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                        <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/40 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <Lock className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <h4 className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-2">
+                          Authentication Required
+                        </h4>
+                        <p className="text-xs text-amber-700 dark:text-amber-300 mb-3">
+                          You must be logged in to book this room
+                        </p>
+                        <div className="flex flex-col gap-2">
+                          <Link href="/signin">
+                            <Button size="sm" className="w-full bg-amber-600 hover:bg-amber-700">
+                              Sign In
+                            </Button>
+                          </Link>
+                          <Link href="/register">
+                            <Button size="sm" variant="outline" className="w-full border-amber-300 text-amber-700 hover:bg-amber-50">
+                              Create Account
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    )}
                     <Button variant="outline" className="w-full">
                       <Calendar className="h-4 w-4 mr-2" />
                       Schedule Viewing
@@ -292,12 +359,41 @@ export default async function RoomDetailsPage({ params }: { params: Promise<{ id
                 ) : (
                   <div className="space-y-3">
                     <Button disabled className="w-full">
-                      Currently Booked
+                      Currently Occupied
                     </Button>
                     <Button variant="outline" className="w-full">
                       <Clock className="h-4 w-4 mr-2" />
                       Join Waiting List
                     </Button>
+                  </div>
+                )}
+
+                {/* Account Required Message */}
+                {!isAuthenticated && (
+                  <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <div className="flex items-start space-x-3">
+                      <User className="h-5 w-5 text-amber-600 mt-0.5" />
+                      <div className="text-sm">
+                        <p className="font-medium text-amber-800 dark:text-amber-200">
+                          Account Required
+                        </p>
+                        <p className="text-amber-700 dark:text-amber-300 mt-1">
+                          You need to sign in or create an account to book this room.
+                        </p>
+                        <div className="flex space-x-2 mt-2">
+                          <Link href="/signin">
+                            <Button size="sm" variant="outline" className="text-amber-700 border-amber-300 hover:bg-amber-100">
+                              Sign In
+                            </Button>
+                          </Link>
+                          <Link href="/register">
+                            <Button size="sm" className="bg-amber-600 hover:bg-amber-700">
+                              Create Account
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -336,14 +432,21 @@ export default async function RoomDetailsPage({ params }: { params: Promise<{ id
                   <span className="text-gray-700 dark:text-gray-300">24/7 Power Supply</span>
                 </div>
                 <div className="flex items-center space-x-3 text-sm">
-                  <Utensils className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-700 dark:text-gray-300">Kitchen Facilities</span>
+                  <MapPin className="h-4 w-4 text-gray-400" />
+                  <span className="text-gray-700 dark:text-gray-300">Prime Location</span>
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
+
+      {/* Booking Modal */}
+      <BookingModal
+        room={room}
+        isOpen={showBookingModal}
+        onClose={() => setShowBookingModal(false)}
+      />
     </div>
   );
 } 

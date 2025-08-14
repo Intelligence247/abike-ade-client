@@ -35,7 +35,7 @@ export default function SignInPage() {
     <div className="min-h-screen bg-neutral-50 dark:bg-gray-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <Link href="/" className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Home
@@ -101,7 +101,7 @@ export default function SignInPage() {
                 <label className="flex items-center">
                   <input
                     type="checkbox"
-                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    
                   />
                   <span className="ml-2 text-gray-600 dark:text-gray-400">Remember me</span>
                 </label>
@@ -123,7 +123,7 @@ export default function SignInPage() {
               <p className="text-gray-600 dark:text-gray-400">
                 Don't have an account?{' '}
                 <Link href="/register" className="text-indigo-600 hover:text-indigo-500 font-medium">
-                  Register here
+                  Sign up here
                 </Link>
               </p>
             </div>

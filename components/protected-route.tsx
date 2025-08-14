@@ -1,38 +1,46 @@
 "use client"
 
-import { useAuth } from '@/lib/auth-context';
-import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Settings } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
+import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  fallback?: React.ReactNode;
 }
 
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
+      console.log('🚫 Unauthenticated user accessing protected route, redirecting to login');
       router.push('/signin');
     }
   }, [isAuthenticated, isLoading, router]);
 
+  // Show loading while checking auth
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-neutral-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <Settings className="h-8 w-8 animate-spin mx-auto mb-4 text-gray-400" />
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-indigo-600" />
           <p className="text-gray-600 dark:text-gray-400">Checking authentication...</p>
         </div>
       </div>
     );
   }
 
+  // Show fallback or redirect if not authenticated
   if (!isAuthenticated) {
-    return null; // Will redirect to signin
+    if (fallback) {
+      return <>{fallback}</>;
+    }
+    return null; // Will redirect in useEffect
   }
 
+  // User is authenticated, show protected content
   return <>{children}</>;
 }

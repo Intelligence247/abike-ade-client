@@ -22,47 +22,23 @@ import {
 
 export function RoomListing() {
   const [filters, setFilters] = useState({
-    searchTerm: '',
-    selectedType: '',
-    selectedPriceRange: '',
-    selectedAmenities: [] as string[]
+    search: '',
+    sort_by: 'title',
+    per_page: 20,
+    page: 1
   });
 
   const filteredRooms = useMemo(() => {
     return rooms.filter(room => {
       // Search filter
-      if (filters.searchTerm) {
-        const searchLower = filters.searchTerm.toLowerCase();
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
         const matchesSearch = 
           room.title.toLowerCase().includes(searchLower) ||
           room.description.toLowerCase().includes(searchLower) ||
-          room.block.toLowerCase().includes(searchLower) ||
-          room.location.toLowerCase().includes(searchLower);
+          room.block.toLowerCase().includes(searchLower);
         
         if (!matchesSearch) return false;
-      }
-
-      // Room type filter
-      if (filters.selectedType && room.type !== filters.selectedType) {
-        return false;
-      }
-
-      // Price range filter
-      if (filters.selectedPriceRange) {
-        const [min, max] = filters.selectedPriceRange.split('-').map(Number);
-        if (max && (room.price < min || room.price > max)) {
-          return false;
-        } else if (!max && room.price < min) {
-          return false;
-        }
-      }
-
-      // Amenities filter
-      if (filters.selectedAmenities.length > 0) {
-        const hasAllSelectedAmenities = filters.selectedAmenities.every(amenity => 
-          room.amenities.includes(amenity)
-        );
-        if (!hasAllSelectedAmenities) return false;
       }
 
       return true;
@@ -77,10 +53,14 @@ export function RoomListing() {
     <div className="space-y-6">
       {/* Filters */}
       <RoomFilters
-        roomTypes={roomTypes}
-        priceRanges={priceRanges}
-        amenities={amenities}
-        onFiltersChange={handleFiltersChange}
+        filters={filters}
+        onUpdateFilters={handleFiltersChange}
+        onResetFilters={() => setFilters({
+          search: '',
+          sort_by: 'title',
+          per_page: 20,
+          page: 1
+        })}
       />
 
       {/* Results Count */}
@@ -155,7 +135,7 @@ export function RoomListing() {
                 </div>
                 <div className="flex items-center space-x-1">
                   <Star className="h-3 w-3" />
-                  <span>{room.rating}/5</span>
+                  <span>4.5/5</span>
                 </div>
               </div>
               
@@ -211,10 +191,10 @@ export function RoomListing() {
           <Button
             variant="outline"
             onClick={() => setFilters({
-              searchTerm: '',
-              selectedType: '',
-              selectedPriceRange: '',
-              selectedAmenities: []
+              search: '',
+              sort_by: 'title',
+              per_page: 20,
+              page: 1
             })}
           >
             Clear All Filters

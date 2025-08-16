@@ -16,7 +16,7 @@ interface UseProfileReturn {
   resetError: () => void;
 }
 
-export function useProfile(): UseProfileReturn {
+export function useProfile(autoFetch: boolean = false): UseProfileReturn {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +29,13 @@ export function useProfile(): UseProfileReturn {
       console.log('useProfile: Fetching profile...');
       const response: ApiResponse = await apiClient.getProfile();
       console.log('useProfile: Profile API response:', response);
+      
+      // Handle case where getProfile returns null (unauthenticated user)
+      if (!response) {
+        console.log('useProfile: No profile response (user not authenticated)');
+        setProfile(null);
+        return null;
+      }
       
       if (response.status === 'success') {
         const profileData = response.data as UserProfile;
@@ -165,11 +172,15 @@ export function useProfile(): UseProfileReturn {
     setError(null);
   };
 
-  // Fetch profile on mount
+  // Fetch profile on mount only if autoFetch is true
   useEffect(() => {
-    console.log('useProfile: Component mounted, fetching profile...');
-    getProfile();
-  }, []);
+    if (autoFetch) {
+      console.log('useProfile: Component mounted with autoFetch=true, fetching profile...');
+      getProfile();
+    } else {
+      console.log('useProfile: Component mounted with autoFetch=false, skipping automatic profile fetch');
+    }
+  }, [autoFetch]);
 
   return {
     profile,

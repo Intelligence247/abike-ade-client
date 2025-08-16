@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 
 export function ProfileContent() {
-  const { profile, loading, error, updateProfile, changePassword, uploadIdentity, uploadAgreement, resetError } = useProfile();
+  const { profile, loading, error, updateProfile, changePassword, uploadIdentity, uploadAgreement, resetError } = useProfile(true);
   const [isEditing, setIsEditing] = React.useState(false);
   const [isChangingPassword, setIsChangingPassword] = React.useState(false);
   const [formData, setFormData] = React.useState({

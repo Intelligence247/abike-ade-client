@@ -256,16 +256,18 @@ export class ApiClient {
           console.log('API Client: Profile success callback:', data);
         },
         onError: (error: any) => {
-          console.error('API Client: Profile error callback:', error);
-          throw new Error(error);
+          console.log('API Client: Profile error callback (user may not be authenticated):', error);
+          // Don't throw error for unauthenticated users, just return null
+          return null;
         }
       });
       
       console.log('API Client: Profile response:', response);
       return response;
     } catch (error) {
-      console.error('API Client: getProfile error:', error);
-      throw error;
+      console.log('API Client: getProfile error (user may not be authenticated):', error);
+      // Return null instead of throwing error for unauthenticated users
+      return null;
     }
   }
 

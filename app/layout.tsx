@@ -10,6 +10,9 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Abike Ade Court - Student Accommodation',
   description: 'Find and book your perfect student accommodation',
+  icons: {
+    icon: '/logo.png',
+  },
 };
 
 export default function RootLayout({

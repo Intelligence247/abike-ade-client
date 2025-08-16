@@ -40,16 +40,21 @@ export function BookingModal({ room, isOpen, onClose }: BookingModalProps) {
   const router = useRouter();
   const { loading, error, currentStep, bookRoom, makePayment, resetBooking } = useRoomBooking();
   const [bookingData, setBookingData] = useState<any>(null);
-  const { getProfile } = useProfile(); // Get profile hook
+  const { getProfile } = useProfile(false); // Don't auto-fetch profile
   const [userProfile, setUserProfile] = useState<any>(null);
 
-  // Fetch user profile when modal opens
+  // Fetch user profile when modal opens and user is authenticated
   useEffect(() => {
     if (isOpen && !userProfile) {
       const fetchProfile = async () => {
-        const profile = await getProfile();
-        if (profile) {
-          setUserProfile(profile);
+        try {
+          const profile = await getProfile();
+          if (profile) {
+            setUserProfile(profile);
+          }
+        } catch (error) {
+          console.log('BookingModal: Could not fetch profile (user may not be authenticated)');
+          // Don't show error toast for unauthenticated users
         }
       };
       fetchProfile();

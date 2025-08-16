@@ -44,7 +44,7 @@ export function useDashboard() {
         // Import and initialize the SDK directly on the client side
         const { Client } = await import('abikeade-sdk');
         const sdkClient = new Client();
-        
+
         console.log('SDK Client initialized for dashboard:', sdkClient);
         setClient(sdkClient);
       } catch (error) {
@@ -92,10 +92,10 @@ export function useDashboard() {
       // Process the data
       if (historyResponse.status === 'success' && historyResponse.data) {
         const transactions = historyResponse.data;
-        
+
         // Get the most recent successful transaction
         const latestTransaction = transactions.find((t: any) => t.status === 'success');
-        
+
         // Calculate total paid
         const totalPaid = transactions
           .filter((t: any) => t.status === 'success')
@@ -107,12 +107,12 @@ export function useDashboard() {
         // Create dashboard stats
         const stats: DashboardStats = {
           roomNumber: latestTransaction?.room?.title || 'Not Assigned',
-          monthlyRent: latestTransaction ? Math.round(latestTransaction.amount / 12 / 100) : 0, // Convert yearly to monthly and kobo to naira
+          monthlyRent: latestTransaction ? Math.round(latestTransaction.amount / 12) : 0, // Convert yearly to monthly and kobo to naira
           roomType: latestTransaction?.room?.features || 'Standard',
           checkInDate: latestTransaction?.date || 'Not Available',
-          totalPaid: totalPaid / 100, // Convert from kobo to naira
+          totalPaid: totalPaid,
           upcomingPayment: upcomingPayment ? {
-            amount: upcomingPayment.amount / 100,
+            amount: upcomingPayment.amount,
             dueDate: upcomingPayment.expiration_date,
             status: upcomingPayment.status
           } : undefined

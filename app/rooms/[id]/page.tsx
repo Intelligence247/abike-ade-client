@@ -442,11 +442,13 @@ export default function RoomDetailsPage({ params }: { params: Promise<{ id: stri
       </div>
 
       {/* Booking Modal */}
-      <BookingModal
-        room={room}
-        isOpen={showBookingModal}
-        onClose={() => setShowBookingModal(false)}
-      />
+      {isAuthenticated && (
+        <BookingModal
+          room={room}
+          isOpen={showBookingModal}
+          onClose={() => setShowBookingModal(false)}
+        />
+      )}
     </div>
   );
 } 

@@ -19,6 +19,7 @@ import {
   Zap,
   Star
 } from 'lucide-react';
+import Image from 'next/image';
 
 export default function LandingPage() {
   const { isAuthenticated, isLoading, logout } = useAuth();
@@ -862,10 +863,8 @@ export default function LandingPage() {
             {/* Company Info */}
             <div className="lg:col-span-2 animate-fade-in">
               <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <span className="text-white font-bold text-lg">AC</span>
-                </div>
-                <span className="text-2xl font-bold">Abike Ade Court</span>
+               <Image src="/logo.png" alt="Abike Ade Court" width={32} height={32} />
+                <span className="text-2xl font-bold">Abikeadecourt</span>
               </div>
               <p className="text-gray-300 mb-6 max-w-md leading-relaxed">
                 Premium student accommodation designed for modern Nigerian university students.

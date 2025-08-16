@@ -58,7 +58,8 @@ export function ResponsiveHeader({
             )}
             
             <Link href="/" className="flex items-center space-x-2">
-            <Image src="/logo.png" alt="Abike Ade Court" width={52} height={52} />
+            <Image src="/logo.png" alt="Abike Ade Court" width={32} height={32} />
+          
             </Link>
           </div>
 

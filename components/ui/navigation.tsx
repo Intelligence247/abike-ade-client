@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
+import Image from 'next/image';
 import { 
   Home, 
   Building, 
@@ -77,9 +78,7 @@ export function Navigation({ className }: NavigationProps) {
           {/* Logo */}
           <div className="p-6 border-b border-gray-200 dark:border-gray-800">
             <Link href="/dashboard" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">AC</span>
-              </div>
+              <Image src="/logo.png" alt="Abike Ade Court" width={32} height={32} />
               <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
                 Abike Ade Court
               </span>

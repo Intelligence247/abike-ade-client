@@ -11,10 +11,11 @@ import { constructImageUrl } from '@/lib/utils';
 import { useRoom } from '@/hooks/use-rooms';
 import { useAuth } from '@/lib/auth-context';
 import { BookingModal } from '@/components/ui/booking-modal';
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Users, 
+import Image from 'next/image';
+import {
+  ArrowLeft,
+  MapPin,
+  Users,
   Calendar,
   ArrowRight,
   Clock,
@@ -27,14 +28,74 @@ import {
   AlertCircle,
   ImageIcon,
   User,
-  Lock
+  Lock,
+  Twitter,
+  Instagram
 } from 'lucide-react';
 
 export default function RoomDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { room, loading, error } = useRoom(roomId || '');
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+
+  // Helper functions for image gallery
+  const getSelectedImageDescription = () => {
+    if (!selectedImage || selectedImage === room?.thumbnail) {
+      return room?.title;
+    }
+    const image = room?.images?.find(img => img.image === selectedImage);
+    return image?.description || room?.title;
+  };
+
+  const getSelectedImageIndex = () => {
+    if (!selectedImage || selectedImage === room?.thumbnail) {
+      return 0;
+    }
+    const index = room?.images?.findIndex(img => img.image === selectedImage) || 0;
+    return index + 1; // +1 because thumbnail is index 0
+  };
+
+  // Navigation functions for image gallery
+  const nextImage = () => {
+    if (!room?.images?.length) return;
+    
+    if (!selectedImage || selectedImage === room.thumbnail) {
+      setSelectedImage(room.images[0].image);
+    } else {
+      const currentIndex = room.images.findIndex(img => img.image === selectedImage);
+      const nextIndex = (currentIndex + 1) % room.images.length;
+      setSelectedImage(room.images[nextIndex].image);
+    }
+  };
+
+  const previousImage = () => {
+    if (!room?.images?.length) return;
+    
+    if (!selectedImage || selectedImage === room.thumbnail) {
+      const lastIndex = room.images.length - 1;
+      setSelectedImage(room.images[lastIndex].image);
+    } else {
+      const currentIndex = room.images.findIndex(img => img.image === selectedImage);
+      const prevIndex = currentIndex === 0 ? room.images.length - 1 : currentIndex - 1;
+      setSelectedImage(room.images[prevIndex].image);
+    }
+  };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft') {
+        previousImage();
+      } else if (event.key === 'ArrowRight') {
+        nextImage();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedImage, room?.images]);
 
   useEffect(() => {
     const getRoomId = async () => {
@@ -142,15 +203,13 @@ export default function RoomDetailsPage({ params }: { params: Promise<{ id: stri
               </Link>
               <div className="w-px h-6 bg-gray-300 dark:bg-gray-600" />
               <Link href="/" className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">AC</span>
-                </div>
+                <Image src="/logo.png" alt="Abike Ade Court" width={32} height={32} />
                 <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
                   Abike Ade Court
                 </span>
               </Link>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <ThemeToggle />
               {!isAuthenticated ? (
@@ -187,22 +246,134 @@ export default function RoomDetailsPage({ params }: { params: Promise<{ id: stri
             <Card className="border-gray-200 dark:border-gray-800">
               <CardContent className="p-0">
                 {room.images && room.images.length > 0 ? (
-                  <div className="relative">
-                    <img
-                      src={constructImageUrl(process.env.NEXT_PUBLIC_BASE_URL, room.images[0].image)}
-                      alt={room.images[0].description || room.title}
-                      className="w-full h-96 object-cover rounded-t-lg"
-                    />
-                    <div className="absolute top-4 left-4">
-                      <Badge 
-                        variant={room.available ? "default" : "secondary"}
-                        className={room.available 
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                          : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-                        }
+                  <div className="space-y-4">
+                    {/* Main Featured Image */}
+                    <div className="relative group">
+                      <img
+                        src={constructImageUrl(process.env.NEXT_PUBLIC_BASE_URL, selectedImage || room.thumbnail)}
+                        alt={getSelectedImageDescription() || room.title}
+                        className="w-full h-96 object-cover rounded-t-lg transition-all duration-300 hover:scale-[1.02]"
+                      />
+                      
+                      {/* Navigation Arrows */}
+                      {room.images.length > 1 && (
+                        <>
+                          <button
+                            onClick={previousImage}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 backdrop-blur-sm text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-black/70 hover:scale-110"
+                            aria-label="Previous image"
+                          >
+                            <ArrowLeft className="h-5 w-5" />
+                          </button>
+                          <button
+                            onClick={nextImage}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 backdrop-blur-sm text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-black/70 hover:scale-110"
+                            aria-label="Next image"
+                          >
+                            <ArrowRight className="h-5 w-5" />
+                          </button>
+                        </>
+                      )}
+                      
+                      <div className="absolute top-4 left-4">
+                        <Badge
+                          variant={room.available ? "default" : "secondary"}
+                          className={room.available
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                          }
+                        >
+                          {room.available ? 'Available' : 'Occupied'}
+                        </Badge>
+                      </div>
+                      
+                      {/* Image Counter */}
+                      <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm font-medium">
+                        {getSelectedImageIndex() + 1} of {room.images.length}
+                      </div>
+                      
+                      {/* Fullscreen Button */}
+                      <button
+                        onClick={() => window.open(constructImageUrl(process.env.NEXT_PUBLIC_BASE_URL, selectedImage || room.thumbnail), '_blank')}
+                        className="absolute bottom-4 right-4 w-10 h-10 bg-black/50 backdrop-blur-sm text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-black/70 hover:scale-110"
+                        aria-label="View fullscreen"
                       >
-                        {room.available ? 'Available' : 'Occupied'}
-                      </Badge>
+                        <div className="w-4 h-4 border-2 border-white rounded-sm" />
+                      </button>
+                    </div>
+
+                    {/* Thumbnail Gallery */}
+                    <div className="px-4 pb-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Room Images ({room.images.length + 1})
+                        </h4>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          Click to view • Use arrow keys to navigate
+                        </span>
+                      </div>
+                      
+                      <div className="flex space-x-3 overflow-x-auto pb-2 scrollbar-hide">
+                        {/* Thumbnail for main image */}
+                        <button
+                          onClick={() => setSelectedImage(room.thumbnail)}
+                          className={`relative flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all duration-200 ${
+                            selectedImage === room.thumbnail || !selectedImage
+                              ? 'border-indigo-500 ring-2 ring-indigo-200'
+                              : 'border-gray-200 dark:border-gray-600 hover:border-indigo-300'
+                          }`}
+                        >
+                          <img
+                            src={constructImageUrl(process.env.NEXT_PUBLIC_BASE_URL, room.thumbnail)}
+                            alt="Main room view"
+                            className="w-24 h-20 object-cover group-hover:scale-110 transition-transform duration-200"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200" />
+                          
+                          {/* Selection indicator */}
+                          {(selectedImage === room.thumbnail || !selectedImage) && (
+                            <div className="absolute top-2 right-2 w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center">
+                              <div className="w-2 h-2 bg-white rounded-full" />
+                            </div>
+                          )}
+                        </button>
+
+                        {/* Thumbnails for additional images */}
+                        {room.images.map((image, index) => (
+                          <button
+                            key={index}
+                            onClick={() => setSelectedImage(image.image)}
+                            className={`relative flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all duration-200 ${
+                              selectedImage === image.image
+                                ? 'border-indigo-500 ring-2 ring-indigo-200'
+                                : 'border-gray-200 dark:border-gray-600 hover:border-indigo-300'
+                            }`}
+                          >
+                            <img
+                              src={constructImageUrl(process.env.NEXT_PUBLIC_BASE_URL, image.image)}
+                              alt={image.description || `Room view ${index + 1}`}
+                              className="w-24 h-20 object-cover group-hover:scale-110 transition-transform duration-200"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200" />
+                            
+                            {/* Selection indicator */}
+                            {selectedImage === image.image && (
+                              <div className="absolute top-2 right-2 w-5 h-5 bg-indigo-500 rounded-full flex items-center justify-center">
+                                <div className="w-2 h-2 bg-white rounded-full" />
+                              </div>
+                            )}
+                            
+                            {/* Hover overlay */}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center">
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                <div className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center">
+                                  <div className="w-2 h-2 bg-indigo-600 rounded-full" />
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -230,7 +401,7 @@ export default function RoomDetailsPage({ params }: { params: Promise<{ id: stri
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Features</h3>
                     <div className="flex flex-wrap gap-2">
-                      {room.features.split(',').map((feature, index) => (
+                      {room.features.split(';').map((feature, index) => (
                         <Badge key={index} variant="secondary" className="px-3 py-1">
                           {feature.trim()}
                         </Badge>
@@ -243,7 +414,7 @@ export default function RoomDetailsPage({ params }: { params: Promise<{ id: stri
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Description</h3>
                   <p className="text-gray-600 dark:text-gray-400">
-                    This comfortable student accommodation offers all the amenities you need for a successful academic year. 
+                    This comfortable student accommodation offers all the amenities you need for a successful academic year.
                     Located in a prime area with easy access to universities and essential services.
                   </p>
                 </div>
@@ -298,9 +469,9 @@ export default function RoomDetailsPage({ params }: { params: Promise<{ id: stri
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">Status</span>
-                    <Badge 
+                    <Badge
                       variant={room.available ? "default" : "secondary"}
-                      className={room.available 
+                      className={room.available
                         ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
                         : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
                       }
@@ -319,7 +490,7 @@ export default function RoomDetailsPage({ params }: { params: Promise<{ id: stri
                 {room.available ? (
                   <div className="space-y-3">
                     {isAuthenticated ? (
-                      <Button 
+                      <Button
                         onClick={handleBookNow}
                         className="w-full bg-indigo-600 hover:bg-indigo-700"
                       >
@@ -400,13 +571,46 @@ export default function RoomDetailsPage({ params }: { params: Promise<{ id: stri
                 <div className="text-center text-sm text-gray-600 dark:text-gray-400">
                   <p>Need help? Contact us</p>
                   <div className="flex items-center justify-center space-x-4 mt-2">
-                    <a href="tel:+2349012345678" className="flex items-center space-x-1 text-indigo-600 hover:text-indigo-500">
+                    <a href="tel:+2348055453708" className="flex items-center space-x-1 text-indigo-600 hover:text-indigo-500">
                       <Phone className="h-3 w-3" />
                       <span>Call</span>
                     </a>
-                    <a href="mailto:info@abikeadecourt.com" className="flex items-center space-x-1 text-indigo-600 hover:text-indigo-500">
+                    <a href="mailto:abikeadecourt@gmail.com" className="flex items-center space-x-1 text-indigo-600 hover:text-indigo-500">
                       <Mail className="h-3 w-3" />
                       <span>Email</span>
+                    </a>
+                  </div>
+                  <div className="flex items-center justify-center space-x-4 mt-3">
+                    <a
+                      href="https://wa.me/2348082129547"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center space-x-1 text-green-600 hover:text-green-500"
+                    >
+                      <div className="w-3 h-3 flex items-center justify-center">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                        </svg>
+                      </div>
+                      <span>WhatsApp</span>
+                    </a>
+                    <a
+                      href="https://x.com/abikeadecourt"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center space-x-1 text-indigo-600 hover:text-indigo-500"
+                    >
+                      <Twitter className="h-3 w-3" />
+                      <span>X</span>
+                    </a>
+                    <a
+                      href="https://www.instagram.com/abikeadecourt"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center space-x-1 text-indigo-600 hover:text-indigo-500"
+                    >
+                      <Instagram className="h-3 w-3" />
+                      <span>Instagram</span>
                     </a>
                   </div>
                 </div>

@@ -29,6 +29,7 @@ export interface DashboardData {
   stats: DashboardStats;
   activities: DashboardActivity[];
   canGenerateAgreement: boolean;
+  userVerified: boolean;
 }
 
 export function useDashboard() {
@@ -87,7 +88,29 @@ export function useDashboard() {
         }
       });
 
-      console.log('Dashboard data responses:', { historyResponse, agreementResponse });
+      // Get user profile for verification status
+      let userVerified = false;
+      try {
+        const profileResponse = await client.account.profile({
+          onSuccess: (data: any) => {
+            console.log('Profile fetch success:', data);
+            if (data && data.data && data.data.verified) {
+              userVerified = data.data.verified;
+            }
+          },
+          onError: (error: any) => {
+            console.log('Profile fetch error:', error);
+          }
+        });
+        
+        if (profileResponse && profileResponse.data && profileResponse.data.verified) {
+          userVerified = profileResponse.data.verified;
+        }
+      } catch (error) {
+        console.log('Profile fetch failed, using default verification status');
+      }
+
+      console.log('Dashboard data responses:', { historyResponse, agreementResponse, userVerified });
 
       // Process the data
       if (historyResponse.status === 'success' && historyResponse.data) {
@@ -153,7 +176,8 @@ export function useDashboard() {
         const dashboardData: DashboardData = {
           stats,
           activities,
-          canGenerateAgreement: agreementResponse.status === 'success'
+          canGenerateAgreement: agreementResponse.status === 'success',
+          userVerified
         };
 
         setDashboardData(dashboardData);
@@ -178,7 +202,8 @@ export function useDashboard() {
               status: 'warning'
             }
           ],
-          canGenerateAgreement: false
+          canGenerateAgreement: false,
+          userVerified: false // Assuming unverified users see empty dashboard
         };
 
         setDashboardData(emptyDashboard);

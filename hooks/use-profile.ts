@@ -11,6 +11,7 @@ interface UseProfileReturn {
   changePassword: (data: ChangePasswordData) => Promise<boolean>;
   uploadIdentity: (formData: FormData) => Promise<boolean>;
   uploadAgreement: (formData: FormData) => Promise<boolean>;
+  uploadProfileImage: (formData: FormData) => Promise<boolean>;
   loading: boolean;
   error: string | null;
   resetError: () => void;
@@ -168,6 +169,36 @@ export function useProfile(autoFetch: boolean = false): UseProfileReturn {
     }
   };
 
+  const uploadProfileImage = async (formData: FormData): Promise<boolean> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response: ApiResponse = await apiClient.uploadProfileImage(formData);
+      
+      if (response.status === 'success') {
+        // Update the local profile state with new image
+        if (profile && response.data?.image) {
+          setProfile({ ...profile, image: response.data.image });
+        }
+        toast.success(response.message || 'Profile image uploaded successfully!');
+        return true;
+      } else {
+        const errorMessage = response.message || 'Failed to upload profile image';
+        setError(errorMessage);
+        toast.error(errorMessage);
+        return false;
+      }
+    } catch (err: any) {
+      const errorMessage = err.message || 'Failed to upload profile image';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const resetError = () => {
     setError(null);
   };
@@ -189,6 +220,7 @@ export function useProfile(autoFetch: boolean = false): UseProfileReturn {
     changePassword,
     uploadIdentity,
     uploadAgreement,
+    uploadProfileImage,
     loading,
     error,
     resetError

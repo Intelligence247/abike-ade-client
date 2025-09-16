@@ -41,9 +41,9 @@ export function ResponsiveHeader({
   return (
     <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center h-16">
           {/* Left side - Logo and Back button */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 flex-shrink-0">
             {showBackButton && (
               <>
                 <Link 
@@ -58,13 +58,39 @@ export function ResponsiveHeader({
             )}
             
             <Link href="/" className="flex items-center space-x-2">
-            <Image src="/logo.png" alt="Abike Ade Court" width={32} height={32} />
-          
+              <Image src="/logo.png" alt="Abike Ade Court" width={50} height={50} />
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-4">
+          {/* Center Navigation - Main Menu */}
+          <div className="hidden lg:flex items-center justify-center flex-1 px-8">
+            <div className="flex items-center space-x-3">
+              <Link href="/rooms">
+                <Button variant="outline" size="sm" className="flex items-center">
+                  <Building className="mr-2 h-4 w-4" />
+                  Rooms
+                </Button>
+              </Link>
+              <Link href="/about">
+                <Button variant="outline" size="sm">
+                  About
+                </Button>
+              </Link>
+              <Link href="/faq">
+                <Button variant="outline" size="sm">
+                  FAQ
+                </Button>
+              </Link>
+              <Link href="/contact">
+                <Button variant="outline" size="sm">
+                  Contact
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Right side - Theme toggle and Auth buttons */}
+          <div className="hidden lg:flex items-center space-x-4 flex-shrink-0">
             <ThemeToggle />
             
             {isLoading ? (
@@ -80,12 +106,6 @@ export function ResponsiveHeader({
                     Dashboard
                   </Button>
                 </Link>
-                <Link href="/rooms">
-                  <Button variant="outline" size="sm" className="flex items-center">
-                    <Building className="mr-2 h-4 w-4" />
-                    Rooms
-                  </Button>
-                </Link>
                 <Button variant="outline" size="sm" onClick={logout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Sign Out
@@ -93,12 +113,6 @@ export function ResponsiveHeader({
               </>
             ) : (
               <>
-                <Link href="/rooms">
-                  <Button variant="outline" size="sm" className="flex items-center">
-                    <Building className="mr-2 h-4 w-4" />
-                    Rooms
-                  </Button>
-                </Link>
                 <Link href="/signin">
                   <Button variant="outline" size="sm">
                     Sign In
@@ -113,8 +127,8 @@ export function ResponsiveHeader({
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="lg:hidden flex items-center space-x-2">
+          {/* Mobile Menu Button - Right Side */}
+          <div className="lg:hidden flex items-center space-x-2 ml-auto">
             <ThemeToggle />
             <Button
               variant="outline"
@@ -152,6 +166,21 @@ export function ResponsiveHeader({
                     Rooms
                   </Button>
                 </Link>
+                <Link href="/about" onClick={closeMobileMenu}>
+                  <Button variant="outline" className="w-full justify-start">
+                    About
+                  </Button>
+                </Link>
+                <Link href="/faq" onClick={closeMobileMenu}>
+                  <Button variant="outline" className="w-full justify-start">
+                    FAQ
+                  </Button>
+                </Link>
+                <Link href="/contact" onClick={closeMobileMenu}>
+                  <Button variant="outline" className="w-full justify-start">
+                    Contact
+                  </Button>
+                </Link>
                 <Button variant="outline" className="w-full justify-start" onClick={() => { logout(); closeMobileMenu(); }}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Sign Out
@@ -163,6 +192,21 @@ export function ResponsiveHeader({
                   <Button variant="outline" className="w-full justify-start">
                     <Building className="mr-2 h-4 w-4" />
                     Rooms
+                  </Button>
+                </Link>
+                <Link href="/about" onClick={closeMobileMenu}>
+                  <Button variant="outline" className="w-full justify-start">
+                    About
+                  </Button>
+                </Link>
+                <Link href="/faq" onClick={closeMobileMenu}>
+                  <Button variant="outline" className="w-full justify-start">
+                    FAQ
+                  </Button>
+                </Link>
+                <Link href="/contact" onClick={closeMobileMenu}>
+                  <Button variant="outline" className="w-full justify-start">
+                    Contact
                   </Button>
                 </Link>
                 <Link href="/signin" onClick={closeMobileMenu}>

@@ -11,7 +11,8 @@ import {
   Home,
   Building,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Shield
 } from 'lucide-react';
 
 export default function RoomsPage() {
@@ -25,6 +26,21 @@ export default function RoomsPage() {
     resetFilters 
   } = useRooms();
 
+  // Hero Image Carousel state
+  const [currentHeroImage, setCurrentHeroImage] = React.useState(0);
+  const [isHeroPaused, setIsHeroPaused] = React.useState(false);
+
+  // Auto-change hero images every 4 seconds
+  React.useEffect(() => {
+    if (isHeroPaused) return;
+
+    const interval = setInterval(() => {
+      setCurrentHeroImage((prev) => (prev + 1) % 5);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [isHeroPaused]);
+
   console.log(rooms+" "+"rooms alert")
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-gray-900">
@@ -32,32 +48,107 @@ export default function RoomsPage() {
       <ResponsiveHeader showBackButton={true} backHref="/" backLabel="Back to Home" />
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section 
+        className="relative text-white py-24 overflow-hidden"
+        onMouseEnter={() => setIsHeroPaused(true)}
+        onMouseLeave={() => setIsHeroPaused(false)}
+      >
+        {/* Background Images */}
+        <div className="absolute inset-0">
+          {[
+            "/Hostel-Images/image9.jpg",
+            "/Hostel-Images/image12.jpg", 
+            "/Hostel-Images/image13.jpg",
+            "/Hostel-Images/image14.jpg",
+            "/Hostel-Images/image15.jpg"
+          ].map((image, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-2000 ${
+                index === currentHeroImage ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              <img
+                src={image}
+                alt={`Student accommodation ${index + 1}`}
+                className="w-full h-full object-cover"
+              />
+              {/* Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/80 via-indigo-800/70 to-purple-900/80" />
+            </div>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl font-bold mb-4">
-              Find Your Perfect Student Accommodation
+            {/* Animated Title */}
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 animate-fade-in-up">
+              <span className="block animate-slide-in-left" style={{ animationDelay: '200ms' }}>
+                Find Your Perfect
+              </span>
+              <span className="block animate-slide-in-right" style={{ animationDelay: '400ms' }}>
+                Student Accommodation
+              </span>
             </h1>
-            <p className="text-xl text-indigo-100 mb-8 max-w-2xl mx-auto">
+            
+            {/* Animated Description */}
+            <p className="text-xl md:text-2xl text-indigo-100 mb-8 max-w-3xl mx-auto animate-fade-in-up" style={{ animationDelay: '600ms' }}>
               Browse our selection of comfortable, affordable rooms designed specifically for students. 
               All rooms come with modern amenities and are located near major universities.
             </p>
-            <div className="flex items-center justify-center space-x-4 text-sm text-indigo-200">
-              <div className="flex items-center space-x-1">
-                <Building className="h-4 w-4" />
-                <span>6 Room Types</span>
+            
+            {/* Animated Stats */}
+            <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-8 text-sm text-indigo-200 animate-fade-in-up" style={{ animationDelay: '800ms' }}>
+              <div className="flex items-center space-x-2 group hover:scale-110 transition-transform duration-300">
+                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-white/30 transition-all duration-300">
+                  <Building className="h-5 w-5" />
+                </div>
+                <span className="font-medium">6 Room Types</span>
               </div>
-              <div className="w-px h-4 bg-indigo-400" />
-              <div className="flex items-center space-x-1">
-                <Home className="h-4 w-4" />
-                <span>Prime Locations</span>
+              
+              <div className="w-px h-8 bg-indigo-400 hidden sm:block" />
+              
+              <div className="flex items-center space-x-2 group hover:scale-110 transition-transform duration-300">
+                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-white/30 transition-all duration-300">
+                  <Home className="h-5 w-5" />
+                </div>
+                <span className="font-medium">Prime Locations</span>
               </div>
-              <div className="w-px h-4 bg-indigo-400" />
-              <div className="flex items-center space-x-1">
-                <span>From ₦65,000/month</span>
+              
+              <div className="w-px h-8 bg-indigo-400 hidden sm:block" />
+              
+              <div className="flex items-center space-x-2 group hover:scale-110 transition-transform duration-300">
+                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-white/30 transition-all duration-300">
+                  <Shield className="h-5 w-5" />
+                </div>
+                <span className="font-medium">24/7 Security</span>
               </div>
             </div>
+
+            {/* Navigation Dots */}
+            <div className="flex items-center justify-center space-x-2 mt-8 animate-fade-in-up" style={{ animationDelay: '1000ms' }}>
+              {[0, 1, 2, 3, 4].map((index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentHeroImage(index)}
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                    index === currentHeroImage
+                      ? 'bg-white scale-125'
+                      : 'bg-white/50 hover:bg-white/75'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
+        </div>
+
+        {/* Floating Elements */}
+        <div className="absolute top-20 left-10 animate-float hidden lg:block">
+          <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-full border border-white/20" />
+        </div>
+        <div className="absolute bottom-20 right-10 animate-float-delayed hidden lg:block">
+          <div className="w-16 h-16 bg-purple-500/20 backdrop-blur-sm rounded-full border border-purple-300/30" />
         </div>
       </section>
 

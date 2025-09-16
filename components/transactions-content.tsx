@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { useTransactions } from '@/hooks/use-transactions';
-import { 
-  Search, 
-  Filter, 
-  Download, 
-  CreditCard, 
+import Link from 'next/link';
+import {
+  Search,
+  Filter,
+  Download,
+  CreditCard,
   Calendar,
   ArrowUpRight,
   ArrowDownRight,
@@ -27,12 +28,12 @@ export function TransactionsContent() {
   // Filter transactions based on search and status
   const filteredTransactions = transactions.filter(transaction => {
     const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.amount.toString().includes(searchTerm) ||
-                         transaction.date.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.reference.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      transaction.amount.toString().includes(searchTerm) ||
+      transaction.date.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transaction.reference.toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesStatus = filterStatus === 'all' || transaction.status === filterStatus;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -75,7 +76,7 @@ export function TransactionsContent() {
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-gray-900">
       <Navigation />
-      
+
       <div className="lg:ml-64">
         {/* Header */}
         <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
@@ -89,9 +90,9 @@ export function TransactionsContent() {
               </p>
             </div>
             <div className="flex items-center space-x-3">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleRefresh}
                 disabled={loading}
               >
@@ -106,10 +107,12 @@ export function TransactionsContent() {
                 <Download className="h-4 w-4 mr-2" />
                 Export
               </Button>
-              <Button className="bg-indigo-600 hover:bg-indigo-700">
-                <CreditCard className="h-4 w-4 mr-2" />
-                Make Payment
-              </Button>
+              <Link href="/rooms">
+                <Button className="bg-indigo-600 hover:bg-indigo-700">
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Browse Rooms
+                </Button>
+              </Link>
             </div>
           </div>
         </header>
@@ -267,7 +270,7 @@ export function TransactionsContent() {
                     No transactions found
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400">
-                    {searchTerm || filterStatus !== 'all' 
+                    {searchTerm || filterStatus !== 'all'
                       ? 'Try adjusting your search or filters'
                       : 'You haven\'t made any transactions yet'
                     }
@@ -305,19 +308,19 @@ export function TransactionsContent() {
                         <p className="font-semibold text-gray-900 dark:text-white">
                           ₦{(transaction.amount).toLocaleString()}
                         </p>
-                        <Badge 
+                        <Badge
                           variant={transaction.status === 'success' ? 'default' : 'secondary'}
                           className={
-                            transaction.status === 'success' 
+                            transaction.status === 'success'
                               ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
                               : transaction.status === 'unpaid'
                                 ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
                                 : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
                           }
                         >
-                          {transaction.status === 'success' ? 'Paid' : 
-                           transaction.status === 'unpaid' ? 'Pending' : 
-                           transaction.status}
+                          {transaction.status === 'success' ? 'Paid' :
+                            transaction.status === 'unpaid' ? 'Pending' :
+                              transaction.status}
                         </Badge>
                       </div>
                     </div>

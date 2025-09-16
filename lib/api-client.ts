@@ -355,6 +355,25 @@ export class ApiClient {
     }
   }
 
+  async uploadProfileImage(formData: FormData) {
+    try {
+      await this.ensureInitialized();
+      
+      const response = await this.client.account.uploadProfileImage({
+        formData: formData,
+        onSuccess: (data: any) => {
+          // Success callback
+        },
+        onError: (error: any) => {
+          throw new Error(error);
+        }
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // Site methods
   async featuredImages(params?: { per_page?: number; page?: number }) {
     try {
@@ -511,6 +530,35 @@ export class ApiClient {
     }
   }
 
+  // Site methods
+  async sendMessage(formData: {
+    email: string;
+    name: string;
+    subject: string;
+    message: string;
+  }, callbacks?: {
+    onSuccess?: (data: any) => void;
+    onError?: (error: any) => void;
+  }) {
+    try {
+      await this.ensureInitialized();
+      
+      console.log('API Client: Sending message...');
+      
+      const response = await this.client.site.sendMessage({
+        formData,
+        onSuccess: callbacks?.onSuccess || ((data: any) => console.log('Message sent successfully:', data)),
+        onError: callbacks?.onError || ((error: any) => console.error('Message error:', error))
+      });
+      
+      console.log('API Client: Message response:', response);
+      return response;
+    } catch (error) {
+      console.error('API Client: sendMessage error:', error);
+      throw error;
+    }
+  }
+
   async checkLoginStatus() {
     try {
       await this.ensureInitialized();
@@ -567,6 +615,7 @@ export interface UpdateProfileData {
   institution?: string;
   department?: string;
   level?: string;
+  image?: string;
 }
 
 export interface ChangePasswordData {

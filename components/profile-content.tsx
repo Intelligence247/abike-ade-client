@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { useProfile } from '@/hooks/use-profile';
 import { 
   User, 
@@ -25,7 +26,7 @@ import {
 } from 'lucide-react';
 
 export function ProfileContent() {
-  const { profile, loading, error, updateProfile, changePassword, uploadIdentity, uploadAgreement, resetError } = useProfile(true);
+  const { profile, loading, error, updateProfile, changePassword, uploadIdentity, uploadAgreement, uploadProfileImage, resetError } = useProfile(true);
   const [isEditing, setIsEditing] = React.useState(false);
   const [isChangingPassword, setIsChangingPassword] = React.useState(false);
   const [formData, setFormData] = React.useState({
@@ -47,6 +48,7 @@ export function ProfileContent() {
     identity: null
   });
   const [agreementFile, setAgreementFile] = React.useState<File | null>(null);
+  const [profileImageFile, setProfileImageFile] = React.useState<File | null>(null);
 
   React.useEffect(() => {
     if (profile) {
@@ -154,6 +156,23 @@ export function ProfileContent() {
     }
   };
 
+  const handleProfileImageUpload = async () => {
+    if (!profileImageFile) {
+      alert('Please select a profile image');
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('image', profileImageFile);
+      
+      await uploadProfileImage(formData);
+      setProfileImageFile(null);
+    } catch (error) {
+      console.error('Failed to upload profile image:', error);
+    }
+  };
+
   if (loading && !profile) {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-gray-900">
@@ -198,13 +217,48 @@ export function ProfileContent() {
         {/* Header */}
         <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Profile
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Manage your account information and preferences
-              </p>
+            <div className="flex items-center space-x-6">
+              {/* Profile Image in Header */}
+              <div className="flex-shrink-0">
+                <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700">
+                  {profile.image ? (
+                    <img
+                      src={process.env.NEXT_PUBLIC_BASE_URL +""+ profile.image}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <User className="w-8 h-8 text-gray-400" />
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    Profile
+                  </h1>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Manage your account information and preferences
+                  </p>
+                </div>
+                {/* Verification Badge */}
+                <div className="flex items-center space-x-2">
+                  {profile.verified ? (
+                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800">
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Verified
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      Not Verified
+                    </Badge>
+                  )}
+                </div>
+              </div>
             </div>
             <div className="flex items-center space-x-3">
               {isEditing ? (
@@ -232,6 +286,37 @@ export function ProfileContent() {
 
         {/* Main Content */}
         <main className="p-6">
+          {/* Verification Status Alert */}
+          {!profile.verified && (
+            <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-yellow-800 dark:text-yellow-200">Account Not Verified</p>
+                  <p className="text-yellow-700 dark:text-yellow-300 mt-1">
+                    Your account needs to be verified before you can receive keys to the hostel. 
+                    Please ensure all required documents are uploaded and contact support if you have questions.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Verification Success Alert */}
+          {profile.verified && (
+            <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-green-800 dark:text-green-200">Account Verified</p>
+                  <p className="text-green-700 dark:text-green-300 mt-1">
+                    Congratulations! Your account has been verified. You are eligible to receive keys to the hostel.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Error Display */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
@@ -255,20 +340,12 @@ export function ProfileContent() {
 
           {/* Success Message */}
           {!error && !loading && (
-            <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-              <div className="flex items-start space-x-3">
-                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
-                <div className="text-sm">
-                  <p className="font-medium text-green-800 dark:text-green-200">Profile Updated Successfully</p>
-                  <p className="text-green-700 dark:text-green-300 mt-1">
-                    Your profile information has been saved.
-                  </p>
-                </div>
-              </div>
+            <div className="hidden mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+             
             </div>
           )}
 
-          <div className="grid lg:grid-cols-2 gap-6">
+                    <div className="grid lg:grid-cols-2 gap-6">
             {/* Personal Information */}
             <Card className="border-gray-200 dark:border-gray-800">
               <CardHeader>
@@ -281,6 +358,98 @@ export function ProfileContent() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Profile Image Section */}
+                <div className="flex items-center space-x-6">
+                  {/* Current Profile Image */}
+                  <div className="flex-shrink-0">
+                    <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700">
+                      {profile.image ? (
+                        <img
+                          src={process.env.NEXT_PUBLIC_BASE_URL +""+ profile.image}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <User className="w-12 h-12 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    {profile.image && (
+                      <div className="mt-2 text-center">
+                        <Button
+                          onClick={() => {
+                            // TODO: Implement remove profile image functionality
+                            alert('Remove profile image functionality will be implemented');
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 border-red-300 hover:bg-red-50"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Profile Image Upload */}
+                  <div className="flex-1 space-y-3">
+                    <div>
+                      <Label htmlFor="profile_image">Profile Picture</Label>
+                      <Input
+                        id="profile_image"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setProfileImageFile(e.target.files?.[0] || null)}
+                        className="cursor-pointer"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">JPG, JPEG, PNG up to 2MB</p>
+                    </div>
+                    
+                    {/* Image Preview */}
+                    {profileImageFile && (
+                      <div className="flex items-center space-x-3">
+                        <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                          <img
+                            src={URL.createObjectURL(profileImageFile)}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          <p className="font-medium">{profileImageFile.name}</p>
+                          <p>{(profileImageFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex space-x-2">
+                      <Button 
+                        onClick={handleProfileImageUpload} 
+                        disabled={!profileImageFile || loading}
+                        size="sm"
+                        className="bg-indigo-600 hover:bg-indigo-700"
+                      >
+                        {loading ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Upload className="h-4 w-4 mr-2" />
+                        )}
+                        Upload Profile Image
+                      </Button>
+                      
+                      {profileImageFile && (
+                        <Button 
+                          onClick={() => setProfileImageFile(null)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Cancel
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="first_name">First Name</Label>
@@ -315,7 +484,7 @@ export function ProfileContent() {
                     disabled={true}
                     placeholder="Enter email address"
                     className="bg-gray-50"
-                  />
+                />
                   <p className="text-xs text-gray-500 mt-1">Cannot be changed</p>
                 </div>
 
@@ -329,6 +498,89 @@ export function ProfileContent() {
                     placeholder="Enter phone number"
                   />
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Verification Status */}
+            <Card className="border-gray-200 dark:border-gray-800">
+              <CardHeader>
+                <CardTitle className="text-gray-900 dark:text-white flex items-center">
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  Verification Status
+                </CardTitle>
+                <CardDescription>
+                  Your account verification details
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Account Status</span>
+                  {profile.verified ? (
+                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Verified
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      Not Verified
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Profile Photo</span>
+                  {profile.image ? (
+                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Uploaded
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      Missing
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Identity Document</span>
+                  {profile.identity ? (
+                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Uploaded
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      Missing
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Agreement</span>
+                  {profile.uploaded_agreement ? (
+                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Signed
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 border-red-200 dark:border-red-800">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      Not Signed
+                    </Badge>
+                  )}
+                </div>
+
+                {!profile.verified && (
+                  <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                    <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                      <strong>Note:</strong> You must complete all required document uploads and have your account verified 
+                      before you can receive keys to the hostel. Contact support for assistance.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

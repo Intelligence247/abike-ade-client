@@ -17,7 +17,9 @@ import {
   Building,
   Droplets,
   Zap,
-  Star
+  Star,
+  Twitter,
+  Instagram
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -70,6 +72,38 @@ export default function LandingPage() {
       carousel.style.transform = `translateX(-${currentSlide * 100}%)`;
     }
   }, [currentSlide]);
+
+  // Hero Image Carousel state
+  const [currentHeroImage, setCurrentHeroImage] = useState(0);
+  const [isHeroPaused, setIsHeroPaused] = useState(false);
+  const heroImages = [
+    "/Hostel-Images/image9.jpg",
+    "/Hostel-Images/image12.jpg", 
+    "/Hostel-Images/image13.jpg",
+    "/Hostel-Images/image14.jpg",
+    "/Hostel-Images/image15.jpg",
+    "/Hostel-Images/image11.jpg",
+    "/Hostel-Images/image10.jpg"
+  ];
+
+  // Auto-change hero images every 3 seconds
+  useEffect(() => {
+    if (isHeroPaused) return;
+    
+    const interval = setInterval(() => {
+      setCurrentHeroImage((prev) => (prev + 1) % heroImages.length);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [isHeroPaused]);
+
+  const nextHeroImage = () => {
+    setCurrentHeroImage((prev) => (prev + 1) % heroImages.length);
+  };
+
+  const previousHeroImage = () => {
+    setCurrentHeroImage((prev) => (prev - 1 + heroImages.length) % heroImages.length);
+  };
 
   // Gallery Carousel state
   const [currentGallerySlide, setCurrentGallerySlide] = useState(0);
@@ -163,6 +197,12 @@ export default function LandingPage() {
             opacity: 1;
           }
         }
+
+        @keyframes heroImageFade {
+          0%, 15% { opacity: 1; }
+          20%, 95% { opacity: 0; }
+          100% { opacity: 1; }
+        }
         
         .animate-slide-in-left {
           animation: slideInLeft 0.8s ease-out forwards;
@@ -179,13 +219,17 @@ export default function LandingPage() {
         .animate-fade-in {
           animation: fadeIn 1s ease-out forwards;
         }
+
+        .hero-image-transition {
+          transition: opacity 1s ease-in-out;
+        }
       `}</style>
       {/* Header */}
       <ResponsiveHeader />
 
       {/* Hero Section */}
       <section className="relative py-24 lg:py-32 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900" />
+        <div className="absolute inset-0 bg-blue-50 dark:bg-gray-900" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -203,7 +247,7 @@ export default function LandingPage() {
                 <div className="space-y-4 animate-slide-in-left">
                   <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white leading-tight">
                     Your Perfect
-                    <span className="block bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    <span className="block text-indigo-600 dark:text-indigo-400">
                       Home Away From Home
                     </span>
                   </h1>
@@ -216,7 +260,7 @@ export default function LandingPage() {
 
               <div className="flex flex-col sm:flex-row gap-4 animate-slide-in-left" style={{ animationDelay: '200ms' }}>
                 <Link href="/rooms">
-                  <Button size="lg" className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-10 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                  <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                     Browse Rooms
                     <ArrowRight className="ml-3 h-5 w-5" />
                   </Button>
@@ -256,25 +300,54 @@ export default function LandingPage() {
 
             {/* Hero Image Carousel */}
             <div className="relative animate-slide-in-right">
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl transform hover:scale-105 transition-transform duration-500">
+              <div 
+                className="relative rounded-3xl overflow-hidden shadow-2xl transform hover:scale-105 transition-transform duration-500"
+                onMouseEnter={() => setIsHeroPaused(true)}
+                onMouseLeave={() => setIsHeroPaused(false)}
+              >
                 <div className="relative h-[600px] overflow-hidden">
-                  {[
-                    "/Hostel-Images/image1.jpg",
-                    "/Hostel-Images/image2.jpg",
-                    "/Hostel-Images/image3.jpg",
-                    "/Hostel-Images/image4.jpg",
-                    "/Hostel-Images/image5.jpg"
-                  ].map((image, index) => (
+                  {heroImages.map((image, index) => (
                     <img
                       key={index}
                       src={image}
                       alt={`Modern hostel room ${index + 1}`}
-                      className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${index === 0 ? 'opacity-100' : 'opacity-0'
-                        }`}
-                      style={{
-                        animation: index === 0 ? 'fadeInOut 10s infinite' : 'none',
-                        animationDelay: `${index * 2}s`
-                      }}
+                      className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+                        index === currentHeroImage ? 'opacity-100' : 'opacity-0'
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                {/* Navigation Arrows */}
+                <button
+                  onClick={previousHeroImage}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-white/20 hover:bg-white/40 backdrop-blur-sm rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-110"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                
+                <button
+                  onClick={nextHeroImage}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-white/20 hover:bg-white/40 backdrop-blur-sm rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-110"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+
+                {/* Image Navigation Dots */}
+                <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                  {heroImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentHeroImage(index)}
+                      className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                        index === currentHeroImage 
+                          ? 'bg-white scale-125' 
+                          : 'bg-white/50 hover:bg-white/75'
+                      }`}
                     />
                   ))}
                 </div>
@@ -349,7 +422,7 @@ export default function LandingPage() {
                           alt={item.title}
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                         {/* Content Overlay */}
                         <div className="absolute bottom-0 left-0 right-0 p-6 text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
@@ -418,44 +491,44 @@ export default function LandingPage() {
             {[
               {
                 icon: Shield,
-                title: "24/7 Security",
+                title: "24/7 Security Guarantee",
                 description: "Round-the-clock security personnel and CCTV surveillance for your safety",
-                color: "from-blue-500 to-cyan-500",
+                color: "bg-blue-500",
                 image: "/Hostel-Images/image11.jpg"
               },
               {
                 icon: Wifi,
                 title: "High-Speed WiFi",
                 description: "Fast and reliable internet connection for your studies and entertainment",
-                color: "from-green-500 to-emerald-500",
+                color: "bg-green-500",
                 image: "/Hostel-Images/image12.jpg"
               },
               {
                 icon: Droplets,
                 title: "Clean Water",
                 description: "24/7 access to clean, treated water for drinking and daily use",
-                color: "from-blue-500 to-indigo-500",
+                color: "bg-blue-500",
                 image: "/Hostel-Images/image13.jpg"
               },
               {
                 icon: Zap,
                 title: "Uninterrupted Power",
                 description: "Backup power systems to ensure you never experience blackouts",
-                color: "from-yellow-500 to-orange-500",
+                color: "bg-yellow-500",
                 image: "/Hostel-Images/image14.jpg"
               },
               {
                 icon: Car,
                 title: "Free Parking",
                 description: "Secure parking space for students with vehicles",
-                color: "from-purple-500 to-pink-500",
+                color: "bg-purple-500",
                 image: "/Hostel-Images/image15.jpg"
               },
               {
                 icon: Users,
                 title: "Community Events",
                 description: "Regular social events and activities to build lasting friendships",
-                color: "from-red-500 to-pink-500",
+                color: "bg-red-500",
                 image: "/Hostel-Images/image1.jpg"
               }
             ].map((feature, index) => (
@@ -471,7 +544,7 @@ export default function LandingPage() {
                   </div>
 
                   <div className="relative z-10">
-                    <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-r ${feature.color} mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                    <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl ${feature.color} mb-6 group-hover:scale-110 transition-transform duration-300`}>
                       <feature.icon className="w-8 h-8 text-white" />
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
@@ -483,7 +556,7 @@ export default function LandingPage() {
                   </div>
 
                   {/* Hover effect overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-purple-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute inset-0 bg-indigo-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
               </div>
             ))}
@@ -491,78 +564,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Student Life Section */}
-      <section className="py-24 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 animate-fade-in">
-              Experience Student Life
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto animate-fade-in" style={{ animationDelay: '200ms' }}>
-              See how our students live, study, and thrive in our modern accommodation
-            </p>
-          </div>
-
-          {/* Student Life Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                image: "/Hostel-Images/image2.jpg",
-                title: "Study Sessions",
-                description: "Quiet study areas for focused learning"
-              },
-              {
-                image: "/Hostel-Images/image3.jpg",
-                title: "Social Spaces",
-                description: "Common areas for building friendships"
-              },
-              {
-                image: "/Hostel-Images/image4.jpg",
-                title: "Modern Amenities",
-                description: "Contemporary facilities for daily comfort"
-              },
-              {
-                image: "/Hostel-Images/image5.jpg",
-                title: "Outdoor Living",
-                description: "Beautiful outdoor spaces for relaxation"
-              }
-            ].map((item, index) => (
-              <div
-                key={index}
-                className="group relative animate-fade-in"
-                style={{ animationDelay: `${index * 200}ms` }}
-              >
-                <div className="relative h-64 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2">
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-
-                  {/* Content */}
-                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                    <h3 className="text-lg font-bold mb-2 group-hover:text-indigo-200 transition-colors duration-300">
-                      {item.title}
-                    </h3>
-                    <p className="text-sm text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      {item.description}
-                    </p>
-                  </div>
-
-                  {/* Hover Indicator */}
-                  <div className="absolute top-4 right-4 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <ArrowRight className="w-4 h-4 text-white" />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Testimonials Section */}
-      <section className="py-24 bg-gradient-to-br from-gray-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 relative overflow-hidden">
+      <section className="py-24 bg-white dark:bg-gray-900 relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0" style={{
@@ -661,7 +665,7 @@ export default function LandingPage() {
                           <img
                             src={testimonial.avatar}
                             alt={testimonial.name}
-                            className="w-12 h-12 rounded-full object-cover ring-2 ring-indigo-100 dark:ring-indigo-900 transition-all duration-300 group-hover:ring-indigo-300 dark:group-hover:ring-indigo-600"
+                            className="md:w-20 md:h-20 w-16 h-16 rounded-full object-cover ring-2 ring-indigo-100 dark:ring-indigo-900 transition-all duration-300 group-hover:ring-indigo-300 dark:group-hover:ring-indigo-600"
                           />
                           <div className="ml-4">
                             <div className="font-semibold text-gray-900 dark:text-white">
@@ -737,11 +741,11 @@ export default function LandingPage() {
       {/* Floating Action Button */}
       <div className="fixed bottom-8 right-8 z-50">
         <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full blur-lg opacity-75 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
+          <div className="absolute inset-0 bg-indigo-600 rounded-full blur-lg opacity-75 group-hover:opacity-100 transition-opacity duration-300 animate-pulse"></div>
           <Link href="/rooms">
             <Button
               size="lg"
-              className="relative bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-full w-16 h-16 p-0 shadow-2xl hover:shadow-indigo-500/25 transition-all duration-300 transform hover:scale-110 hover:-translate-y-1"
+              className="relative bg-indigo-600 hover:bg-indigo-700 text-white rounded-full w-16 h-16 p-0 shadow-2xl hover:shadow-indigo-500/25 transition-all duration-300 transform hover:scale-110 hover:-translate-y-1"
             >
               <Building className="w-8 h-8" />
             </Button>
@@ -753,7 +757,7 @@ export default function LandingPage() {
       </div>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-indigo-600 to-purple-600 relative overflow-hidden">
+      <section className="py-20 bg-indigo-600 relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0" style={{
@@ -780,11 +784,126 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* In Loving Memory Section */}
+      <section className="py-20 bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 dark:from-rose-900/20 dark:via-pink-900/20 dark:to-purple-900/20 relative overflow-hidden">
+        <div className="absolute inset-0 bg-white/10 dark:bg-black/10" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              In Loving Memory
+            </h2>
+            <div className="w-24 h-1 bg-gradient-to-r from-rose-400 to-purple-500 mx-auto rounded-full"></div>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Image Section */}
+            <div className="relative">
+              <div className="relative overflow-hidden rounded-2xl shadow-2xl">
+                <img
+                  src="/Inloving-memory.png"
+                  alt="Mrs B.A Raji - In Loving Memory"
+                  className="w-full h-auto object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+              </div>
+              <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-rose-100 dark:bg-rose-900/30 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-rose-500 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Content Section */}
+            <div className="space-y-8">
+              {/* Dedication */}
+              <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-2xl p-8 border border-rose-200 dark:border-rose-800">
+                <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                  <span className="w-8 h-8 bg-rose-100 dark:bg-rose-900/30 rounded-full flex items-center justify-center mr-3">
+                    <svg className="w-4 h-4 text-rose-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                  </span>
+                  Dedication
+                </h3>
+                <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-lg">
+                  To my dear late mother <strong>Mrs B.A Raji</strong>, who always believed in me and inspired me to never give up on my dreams, I dedicate this 37 room self-contained students hostel in your hometown of Ago-Iwoye, Ogun State, Nigeria. Your unwavering support and encouragement will forever be remembered in this tangible achievement. I am grateful for everything you have done for me and I hope to continue making you proud. <em>Rest in peace, dear mother.</em>
+                </p>
+              </div>
+
+              {/* Gratitude Sections */}
+              <div className="space-y-6">
+                {/* Divine Gratitude */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
+                  <h4 className="text-lg font-semibold text-blue-900 dark:text-blue-200 mb-3 flex items-center">
+                    <span className="w-6 h-6 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center mr-2">
+                      <svg className="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                      </svg>
+                    </span>
+                    Divine Gratitude
+                  </h4>
+                  <p className="text-blue-800 dark:text-blue-300 text-sm leading-relaxed">
+                    Dear God, I want to express my deepest and sincerest gratitude for making this project a success. Your guidance and blessings have been instrumental in every step of the way, and I am forever grateful for your unwavering support. Thank you for your never-ending love and grace. <strong>Amen.</strong>
+                  </p>
+                </div>
+
+                {/* Team Thanks */}
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-6 border border-green-200 dark:border-green-800">
+                  <h4 className="text-lg font-semibold text-green-900 dark:text-green-200 mb-3 flex items-center">
+                    <span className="w-6 h-6 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center mr-2">
+                      <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                      </svg>
+                    </span>
+                    Team Thanks
+                  </h4>
+                  <p className="text-green-800 dark:text-green-300 text-sm leading-relaxed">
+                    We would like to extend our sincere appreciation and gratitude to all the workers who have contributed to the success of this project. From laying the foundations to the final touches, each and every one of you has played a crucial role in bringing this project to fruition. A special thank you goes out to the electrician who has been with us since the beginning and has seen the project through to the end. Your hard work, dedication, and expertise have not gone unnoticed and we are truly grateful for your contributions.
+                  </p>
+                </div>
+
+                {/* Family Thanks */}
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800">
+                  <h4 className="text-lg font-semibold text-purple-900 dark:text-purple-200 mb-3 flex items-center">
+                    <span className="w-6 h-6 bg-purple-100 dark:bg-purple-900/40 rounded-full flex items-center justify-center mr-2">
+                      <svg className="w-3 h-3 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+                      </svg>
+                    </span>
+                    Family Thanks
+                  </h4>
+                  <p className="text-purple-800 dark:text-purple-300 text-sm leading-relaxed">
+                    I want to take a moment to express my sincere gratitude to my family, both extended and immediate. Thank you for always standing by me, supporting me, and believing in me. Your love and encouragement have helped me through the toughest times and have made my successes even sweeter. I am blessed to have such a loving and caring family.
+                  </p>
+                </div>
+
+                {/* Special Appreciation */}
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl p-6 border border-amber-200 dark:border-amber-800">
+                  <h4 className="text-lg font-semibold text-amber-900 dark:text-amber-200 mb-3 flex items-center">
+                    <span className="w-6 h-6 bg-amber-100 dark:bg-amber-900/40 rounded-full flex items-center justify-center mr-2">
+                      <svg className="w-3 h-3 text-amber-600" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                      </svg>
+                    </span>
+                    Special Appreciation
+                  </h4>
+                  <p className="text-amber-800 dark:text-amber-300 text-sm leading-relaxed">
+                    On behalf of the entire team, I want to extend a special appreciation to all the talented and dedicated engineers who have worked tirelessly on this project. I would especially like to give my heartfelt gratitude to my cousin brother, <strong>Mr. Akeem Elias of Meekad Hotel Ago Iwoye</strong>. Your contributions have been immeasurable and we are truly blessed to have you as a part of our team.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Call to Action Section */}
-      <section className="py-24 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 relative overflow-hidden">
+      <section className="py-24 bg-indigo-700 relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
+          <div className="absolute inset-0 bg-white/20"></div>
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -840,7 +959,7 @@ export default function LandingPage() {
                 <div className="text-indigo-100 group-hover:text-white transition-colors duration-300">Support Available</div>
               </div>
               <div className="text-center group">
-                <div className="text-4xl font-bold text-white mb-2 group-hover:scale-110 transition-transform duration-300">₦150K</div>
+                <div className="text-4xl font-bold text-white mb-2 group-hover:scale-110 transition-transform duration-300">₦300K</div>
                 <div className="text-indigo-100 group-hover:text-white transition-colors duration-300">Starting Price</div>
               </div>
             </div>
@@ -871,15 +990,22 @@ export default function LandingPage() {
                 Safe, comfortable, and affordable housing with all the amenities you need.
               </p>
               <div className="flex space-x-4">
-                <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-indigo-600 transition-all duration-300 cursor-pointer transform hover:scale-110">
-                  <span className="text-sm font-semibold">FB</span>
-                </div>
-                <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-indigo-600 transition-all duration-300 cursor-pointer transform hover:scale-110">
-                  <span className="text-sm font-semibold">IG</span>
-                </div>
-                <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-indigo-600 transition-all duration-300 cursor-pointer transform hover:scale-110">
-                  <span className="text-sm font-semibold">TW</span>
-                </div>
+                <a 
+                  href="https://x.com/abikeadecourt" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-indigo-600 transition-all duration-300 cursor-pointer transform hover:scale-110 group"
+                >
+                  <Twitter className="h-5 w-5 text-gray-300 group-hover:text-white transition-colors duration-300" />
+                </a>
+                <a 
+                  href="https://www.instagram.com/abikeadecourt" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-indigo-600 transition-all duration-300 cursor-pointer transform hover:scale-110 group"
+                >
+                  <Instagram className="h-5 w-5 text-gray-300 group-hover:text-white transition-colors duration-300" />
+                </a>
               </div>
             </div>
 
@@ -891,6 +1017,7 @@ export default function LandingPage() {
                 <li><Link href="/about" className="text-gray-300 hover:text-white transition-colors duration-300 hover:translate-x-1 transform inline-block">About Us</Link></li>
                 <li><Link href="/contact" className="text-gray-300 hover:text-white transition-colors duration-300 hover:translate-x-1 transform inline-block">Contact</Link></li>
                 <li><Link href="/faq" className="text-gray-300 hover:text-white transition-colors duration-300 hover:translate-x-1 transform inline-block">FAQ</Link></li>
+
               </ul>
             </div>
 
@@ -900,16 +1027,24 @@ export default function LandingPage() {
               <div className="space-y-3">
                 <div className="flex items-center space-x-3 group">
                   <MapPin className="h-5 w-5 text-indigo-400 group-hover:scale-110 transition-transform duration-300" />
-                  <span className="text-gray-300 group-hover:text-white transition-colors duration-300">Lagos, Nigeria</span>
+                  <span className="text-gray-300 group-hover:text-white transition-colors duration-300">Oke-odo, off konigba Bus-stop, Ago-Iwoye, Ogun State, Nigeria</span>
                 </div>
-                <div className="flex items-center space-x-3 group">
-                  <Phone className="h-5 w-5 text-indigo-400 group-hover:scale-110 transition-transform duration-300" />
-                  <span className="text-gray-300 group-hover:text-white transition-colors duration-300">+234 123 456 7890</span>
-                </div>
-                <div className="flex items-center space-x-3 group">
-                  <Mail className="h-5 w-5 text-indigo-400 group-hover:scale-110 transition-transform duration-300" />
-                  <span className="text-gray-300 group-hover:text-white transition-colors duration-300">info@abikeadecourt.com</span>
-                </div>
+                                  <div className="flex items-center space-x-3 group">
+                    <Phone className="h-5 w-5 text-indigo-400 group-hover:scale-110 transition-transform duration-300" />
+                    <a href="tel:+2348055453708" className="text-gray-300 group-hover:text-white transition-colors duration-300 hover:underline">+234 805 545 3708</a>
+                  </div>
+                  <div className="flex items-center space-x-3 group">
+                    <Mail className="h-5 w-5 text-indigo-400 group-hover:scale-110 transition-transform duration-300" />
+                    <span className="text-gray-300 group-hover:text-white transition-colors duration-300">abikeadecourt@gmail.com</span>
+                  </div>
+                  <div className="flex items-center space-x-3 group">
+                    <div className="h-5 w-5 text-indigo-400 group-hover:scale-110 transition-transform duration-300 flex items-center justify-center">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                      </svg>
+                    </div>
+                    <a href="https://wa.me/2348082129547" target="_blank" rel="noopener noreferrer" className="text-gray-300 group-hover:text-white transition-colors duration-300 hover:underline">+234 808 212 9547</a>
+                  </div>
               </div>
             </div>
           </div>

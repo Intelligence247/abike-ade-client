@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useProfile } from '@/hooks/use-profile';
+import { constructImageUrl } from '@/lib/utils';
 import { 
   User, 
   Mail, 
@@ -26,7 +27,7 @@ import {
 } from 'lucide-react';
 
 export function ProfileContent() {
-  const { profile, loading, error, updateProfile, changePassword, uploadIdentity, uploadAgreement, uploadProfileImage, resetError } = useProfile(true);
+  const { profile, loading, error, updateProfile, changePassword, uploadIdentity, uploadAgreement, getProfile, resetError } = useProfile(true);
   const [isEditing, setIsEditing] = React.useState(false);
   const [isChangingPassword, setIsChangingPassword] = React.useState(false);
   const [formData, setFormData] = React.useState({
@@ -40,15 +41,10 @@ export function ProfileContent() {
     new_password: '',
     confirm_password: ''
   });
-  const [identityFiles, setIdentityFiles] = React.useState<{
-    image: File | null;
-    identity: File | null;
-  }>({
-    image: null,
-    identity: null
-  });
+  const [identityFile, setIdentityFile] = React.useState<File | null>(null);
   const [agreementFile, setAgreementFile] = React.useState<File | null>(null);
   const [profileImageFile, setProfileImageFile] = React.useState<File | null>(null);
+  const [uploadSuccess, setUploadSuccess] = React.useState(false);
 
   React.useEffect(() => {
     if (profile) {
@@ -122,20 +118,49 @@ export function ProfileContent() {
   };
 
   const handleIdentityUpload = async () => {
-    if (!identityFiles.image || !identityFiles.identity) {
-      alert('Please select both image and identity files');
+    if (!identityFile) {
+      alert('Please select an identity document');
       return;
     }
 
     try {
       const formData = new FormData();
-      formData.append('image', identityFiles.image);
-      formData.append('identity', identityFiles.identity);
       
+      // Use the profile image as the passport photo and the selected file as identity
+      if (profile?.image && profile.image.trim() !== '') {
+        try {
+          // If user has a profile image, fetch it and use it as the passport photo
+          const profileImageUrl = constructImageUrl(process.env.NEXT_PUBLIC_BASE_URL, profile.image);
+          console.log('Fetching profile image from:', profileImageUrl);
+          
+          const profileImageResponse = await fetch(profileImageUrl);
+          if (profileImageResponse.ok) {
+            const profileImageBlob = await profileImageResponse.blob();
+            formData.append('image', profileImageBlob, 'profile-image.jpg');
+            console.log('Using profile image as passport photo');
+          } else {
+            throw new Error('Failed to fetch profile image');
+          }
+        } catch (fetchError) {
+          console.warn('Failed to fetch profile image, using identity file for both:', fetchError);
+          // If fetching profile image fails, use the identity file for both
+          formData.append('image', identityFile);
+        }
+      } else {
+        // If no profile image, use the identity file for both
+        console.log('No profile image found, using identity file for both image and identity');
+        formData.append('image', identityFile);
+      }
+      
+      formData.append('identity', identityFile);
+      
+      console.log('Uploading identity documents...');
       await uploadIdentity(formData);
-      setIdentityFiles({ image: null, identity: null });
+      setIdentityFile(null);
+      console.log('Identity documents uploaded successfully');
     } catch (error) {
       console.error('Failed to upload identity:', error);
+      alert('Failed to upload identity document. Please try again.');
     }
   };
 
@@ -163,13 +188,24 @@ export function ProfileContent() {
     }
 
     try {
+      console.log('Attempting to upload profile image using uploadIdentity endpoint...');
+      
+      // Use uploadIdentity endpoint with the same image for both image and identity fields
       const formData = new FormData();
       formData.append('image', profileImageFile);
+      formData.append('identity', profileImageFile); // Use same image for both fields
       
-      await uploadProfileImage(formData);
+      await uploadIdentity(formData);
+      console.log('Profile image uploaded successfully using uploadIdentity endpoint');
       setProfileImageFile(null);
+      setUploadSuccess(true);
+      setTimeout(() => setUploadSuccess(false), 3000); // Hide success message after 3 seconds
+      
+      // Refresh profile to get updated image
+      await getProfile();
     } catch (error) {
       console.error('Failed to upload profile image:', error);
+      alert('Failed to upload profile image. Please try again.');
     }
   };
 
@@ -339,9 +375,17 @@ export function ProfileContent() {
           )}
 
           {/* Success Message */}
-          {!error && !loading && (
-            <div className="hidden mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-             
+          {uploadSuccess && (
+            <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-medium text-green-800 dark:text-green-200">Profile Image Updated</p>
+                  <p className="text-green-700 dark:text-green-300 mt-1">
+                    Your profile image has been uploaded successfully!
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -375,21 +419,7 @@ export function ProfileContent() {
                         </div>
                       )}
                     </div>
-                    {profile.image && (
-                      <div className="mt-2 text-center">
-                        <Button
-                          onClick={() => {
-                            // TODO: Implement remove profile image functionality
-                            alert('Remove profile image functionality will be implemented');
-                          }}
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 border-red-300 hover:bg-red-50"
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    )}
+                   
                   </div>
                   
                   {/* Profile Image Upload */}
@@ -400,7 +430,24 @@ export function ProfileContent() {
                         id="profile_image"
                         type="file"
                         accept="image/*"
-                        onChange={(e) => setProfileImageFile(e.target.files?.[0] || null)}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            // Validate file size (2MB limit)
+                            if (file.size > 2 * 1024 * 1024) {
+                              alert('File size must be less than 2MB');
+                              e.target.value = '';
+                              return;
+                            }
+                            // Validate file type
+                            if (!file.type.startsWith('image/')) {
+                              alert('Please select a valid image file');
+                              e.target.value = '';
+                              return;
+                            }
+                          }
+                          setProfileImageFile(file || null);
+                        }}
                         className="cursor-pointer"
                       />
                       <p className="text-xs text-gray-500 mt-1">JPG, JPEG, PNG up to 2MB</p>
@@ -427,21 +474,27 @@ export function ProfileContent() {
                         onClick={handleProfileImageUpload} 
                         disabled={!profileImageFile || loading}
                         size="sm"
-                        className="bg-indigo-600 hover:bg-indigo-700"
+                        className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                       >
                         {loading ? (
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         ) : (
                           <Upload className="h-4 w-4 mr-2" />
                         )}
-                        Upload Profile Image
+                        {loading ? 'Uploading...' : 'Upload Profile Image'}
                       </Button>
                       
                       {profileImageFile && (
                         <Button 
-                          onClick={() => setProfileImageFile(null)}
+                          onClick={() => {
+                            setProfileImageFile(null);
+                            // Reset the file input
+                            const fileInput = document.getElementById('profile_image') as HTMLInputElement;
+                            if (fileInput) fileInput.value = '';
+                          }}
                           variant="outline"
                           size="sm"
+                          disabled={loading}
                         >
                           Cancel
                         </Button>
@@ -726,38 +779,33 @@ export function ProfileContent() {
               <CardHeader>
                 <CardTitle className="text-gray-900 dark:text-white flex items-center">
                   <Upload className="h-5 w-5 mr-2" />
-                  Upload Identity Documents
+                  Upload Identity Document
                 </CardTitle>
                 <CardDescription>
-                  Upload your passport photo and school ID
+                  Upload your school ID or course form (passport photo is taken from your profile picture)
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="passport_image">Passport Photo</Label>
-                  <Input
-                    id="passport_image"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setIdentityFiles(prev => ({ ...prev, image: e.target.files?.[0] || null }))}
-                    className="cursor-pointer"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">JPG, JPEG, PNG up to 2MB</p>
-                </div>
                 <div>
                   <Label htmlFor="identity_document">School ID/Course Form</Label>
                   <Input
                     id="identity_document"
                     type="file"
                     accept="image/*"
-                    onChange={(e) => setIdentityFiles(prev => ({ ...prev, identity: e.target.files?.[0] || null }))}
+                    onChange={(e) => setIdentityFile(e.target.files?.[0] || null)}
                     className="cursor-pointer"
                   />
                   <p className="text-xs text-gray-500 mt-1">JPG, JPEG, PNG up to 2MB</p>
                 </div>
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    <strong>Note:</strong> Your passport photo will be automatically taken from your profile picture. 
+                    Make sure you have uploaded a clear profile picture first.
+                  </p>
+                </div>
                 <Button 
                   onClick={handleIdentityUpload} 
-                  disabled={!identityFiles.image || !identityFiles.identity || loading}
+                  disabled={!identityFile || loading}
                   className="w-full"
                 >
                   {loading ? (
@@ -765,7 +813,7 @@ export function ProfileContent() {
                   ) : (
                     <Upload className="h-4 w-4 mr-2" />
                   )}
-                  Upload Identity Documents
+                  Upload Identity Document
                 </Button>
               </CardContent>
             </Card>

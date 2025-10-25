@@ -355,24 +355,6 @@ export class ApiClient {
     }
   }
 
-  async uploadProfileImage(formData: FormData) {
-    try {
-      await this.ensureInitialized();
-      
-      const response = await this.client.account.uploadProfileImage({
-        formData: formData,
-        onSuccess: (data: any) => {
-          // Success callback
-        },
-        onError: (error: any) => {
-          throw new Error(error);
-        }
-      });
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  }
 
   // Site methods
   async featuredImages(params?: { per_page?: number; page?: number }) {

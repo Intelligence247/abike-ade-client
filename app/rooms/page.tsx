@@ -42,6 +42,9 @@ export default function RoomsPage() {
   }, [isHeroPaused]);
 
   console.log(rooms+" "+"rooms alert")
+  const roomCount = Array.isArray(rooms) ? rooms.length : 0;
+  const hasRooms = roomCount > 0;
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-gray-900">
             {/* Header */}
@@ -173,7 +176,7 @@ export default function RoomsPage() {
                   Available Rooms
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400">
-                  {loading ? 'Loading...' : `${pagination.totalItems} rooms found`}
+                  {loading ? 'Loading...' : `${pagination.totalItems ?? roomCount} rooms found`}
                 </p>
               </div>
               {pagination.totalPages > 1 && (
@@ -208,16 +211,16 @@ export default function RoomsPage() {
             )}
 
             {/* Rooms Grid */}
-            {!loading && !error && rooms.length > 0 && (
+            {!loading && !error && hasRooms && (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {rooms.map((room) => (
+                {Array.isArray(rooms) && rooms.map((room) => (
                   <RoomCard key={room.id} room={room} />
                 ))}
               </div>
             )}
 
             {/* No Results */}
-            {!loading && !error && rooms.length === 0 && (
+            {!loading && !error && !hasRooms && (
               <div className="text-center py-12">
                 <Building className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">

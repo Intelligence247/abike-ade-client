@@ -75,13 +75,17 @@ export function useRooms(): UseRoomsReturn {
       const response: RoomListResponse = await apiClient.roomList(params);
       
       if (response.status === 'success') {
-        setRooms(response.data);
+        const roomsData = Array.isArray(response.data) ? response.data : [];
+        setRooms(roomsData);
         setPagination({
-          currentPage: response.page_number,
-          totalPages: response.total_pages,
-          totalItems: response.total_items,
-          itemsPerPage: response.items_per_page
+          currentPage: response.page_number ?? 1,
+          totalPages: response.total_pages ?? 1,
+          totalItems: response.total_items ?? roomsData.length,
+          itemsPerPage: response.items_per_page ?? roomsData.length
         });
+        if (!Array.isArray(response.data)) {
+          toast.warning('No room is available.');
+        }
       } else {
         const errorMessage = response.message || 'Failed to fetch rooms';
         setError(errorMessage);
